@@ -8,30 +8,20 @@
 
 <body style="font-family: Arial; padding: 20px;">
 
-  <h2>FTB Shortage Collection</h2>
+<h2>FTB Shortage Collection</h2>
 
-  <!-- UDISE -->
-  <input id="udise" placeholder="Enter 11-digit UDISE" />
-  <button onclick="fetchSchool()">Fetch</button>
+<input id="udise" placeholder="Enter 11-digit UDISE">
+<button onclick="fetchSchool()">Fetch</button>
 
-  <div id="school-info" style="margin-top:10px;"></div>
+<div id="school-info" style="margin-top:10px;"></div>
+<div id="books" style="margin-top:20px;"></div>
 
-  <!-- Books -->
-  <div id="books" style="margin-top:20px;"></div>
+<button onclick="submitData()">Submit</button>
 
-  <button id="submit-btn" onclick="submitData()" style="margin-top:20px;">
-    Submit
-  </button>
-
-  <div id="status" style="margin-top:15px; font-weight:bold;"></div>
-
+<div id="status" style="margin-top:15px;"></div>
 
 <script>
-const CONFIG = {
-  SCHOOLS_API: 'https://script.google.com/macros/s/AKfycbwhl6Xo0UpdZssFVTwDMlFJ2BzE9E9vMHa44Tsd8eDua7FOoH1jG20pJGqMRldwf-Ux/exec?action=schools',
-  BOOKS_API:   'https://script.google.com/macros/s/AKfycbwhl6Xo0UpdZssFVTwDMlFJ2BzE9E9vMHa44Tsd8eDua7FOoH1jG20pJGqMRldwf-Ux/exec?action=books',
-  SUBMIT_API:  'https://script.google.com/macros/s/AKfycbwhl6Xo0UpdZssFVTwDMlFJ2BzE9E9vMHa44Tsd8eDua7FOoH1jG20pJGqMRldwf-Ux/exec?action=submit',
-};
+const BASE_URL = "https://script.google.com/macros/s/AKfycbwhl6Xo0UpdZssFVTwDMlFJ2BzE9E9vMHa44Tsd8eDua7FOoH1jG20pJGqMRldwf-Ux/exec";
 
 let currentSchool = null;
 
@@ -41,14 +31,14 @@ async function fetchSchool() {
   const udise = document.getElementById('udise').value.trim();
 
   if (udise.length !== 11) {
-    alert("Enter valid 11-digit UDISE");
+    alert("Enter valid UDISE");
     return;
   }
 
-  const res = await fetch(CONFIG.SCHOOLS_API);
+  const res = await fetch(BASE_URL + "?action=schools");
   const data = await res.json();
 
-  const school = data.find(s => String(s.udise).trim() === udise);
+  const school = data.find(s => s.udise === udise);
 
   if (!school) {
     alert("School not found");
@@ -58,10 +48,7 @@ async function fetchSchool() {
   currentSchool = school;
 
   document.getElementById('school-info').innerHTML =
-    `<b>${school.school}</b><br>
-     District: ${school.district}<br>
-     Block: ${school.block}<br>
-     Medium: ${school.medium}`;
+    `<b>${school.school}</b><br>${school.district}`;
 
   loadBooks();
 }
@@ -69,7 +56,7 @@ async function fetchSchool() {
 
 // ================= LOAD BOOKS =================
 async function loadBooks() {
-  const res = await fetch(CONFIG.BOOKS_API);
+  const res = await fetch(BASE_URL + "?action=books");
   const data = await res.json();
 
   const books = data.filter(b => b.medium === currentSchool.medium);
@@ -78,12 +65,11 @@ async function loadBooks() {
 
   books.forEach(b => {
     html += `
-      <div style="margin-bottom:10px;">
+      <div>
         ${b.book} (${b.class})
         <input type="number" class="shortage-input"
           data-book="${b.book}"
-          data-class="${b.class}"
-          placeholder="0">
+          data-class="${b.class}">
       </div>
     `;
   });
@@ -118,9 +104,8 @@ async function submitData() {
   });
 
   try {
-    const res = await fetch(CONFIG.SUBMIT_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch(BASE_URL + "?action=submit", {
+      method: "POST",
       body: JSON.stringify({ rows })
     });
 
@@ -128,11 +113,11 @@ async function submitData() {
 
     if (result.error) throw new Error(result.error);
 
-    document.getElementById('status').innerText = "✅ Data submitted successfully";
+    document.getElementById('status').innerText = "✅ Submitted";
 
   } catch (err) {
     console.error(err);
-    document.getElementById('status').innerText = "❌ Submission failed";
+    document.getElementById('status').innerText = "❌ Failed";
   }
 }
 </script>
