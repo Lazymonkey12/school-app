@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1a5c8a" />
+  <meta name="description" content="FTB Shortage Data Collection App for Government Schools" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="FTB Shortage" />
+  <title>FTB Shortage — School Data Collection</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --blue-dark:  #0f3d5c;
+      --blue-mid:   #1a5c8a;
+      --blue-light: #2980b9;
+      --accent:     #f39c12;
+      --accent-light: #fef9ee;
+      --green:      #27ae60;
+      --red:        #e74c3c;
+      --bg:         #f4f7fb;
+      --card:       #ffffff;
+      --border:     #d5e3ef;
+      --text:       #1a2b3c;
+      --muted:      #6b8299;
+      --radius:     12px;
+      --shadow:     0 2px 16px rgba(15,61,92,0.10);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { font-size: 16px; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 100px;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, var(--blue-dark) 0%, var(--blue-mid) 100%);
+      color: #fff;
+      padding: 18px 20px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(15,61,92,0.25);
+    }
+    header h1 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+    header p {
+      font-size: 0.75rem;
+      opacity: 0.75;
+      margin-top: 2px;
+    }
+    .header-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-icon {
+      width: 36px; height: 36px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    /* ── Main ── */
+    main { padding: 16px; max-width: 600px; margin: 0 auto; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+    }
+    .card-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .card-title::before {
+      content: '';
+      display: block;
+      width: 3px;
+      height: 14px;
+      background: var(--blue-mid);
+      border-radius: 2px;
+    }
+
+    /* ── UDISE Input ── */
+    .udise-row {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+    }
+    .udise-input {
+      flex: 1;
+      padding: 14px 16px;
+      font-size: 1.15rem;
+      font-family: 'DM Mono', monospace;
+      font-weight: 500;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: #f9fbfd;
+      color: var(--text);
+      letter-spacing: 0.12em;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+    .udise-input:focus {
+      outline: none;
+      border-color: var(--blue-mid);
+      background: #fff;
+    }
+    .udise-input.error { border-color: var(--red); }
+    .udise-input.success { border-color: var(--green); }
+    .fetch-btn {
+      padding: 14px 18px;
+      background: var(--blue-mid);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+    .fetch-btn:active { transform: scale(0.97); background: var(--blue-dark); }
+    .fetch-btn:disabled { background: var(--muted); cursor: not-allowed; }
+
+    /* ── Alert Messages ── */
+    .alert {
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-top: 12px;
+      display: none;
+    }
+    .alert.show { display: block; }
+    .alert-error { background: #fdf2f2; color: var(--red); border: 1px solid #f5c6c6; }
+    .alert-success { background: #f0fdf4; color: var(--green); border: 1px solid #b7edc7; }
+    .alert-info { background: #f0f7ff; color: var(--blue-mid); border: 1px solid #c0ddf5; }
+
+    /* ── School Details ── */
+    #school-details { display: none; }
+    .school-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .school-field {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .school-field-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+    .school-field-value {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .school-name-full {
+      grid-column: 1 / -1;
+      background: var(--accent-light);
+      border: 1px solid #fde8b0;
+    }
+    .school-name-full .school-field-value {
+      font-size: 0.95rem;
+      color: var(--blue-dark);
+    }
+    .medium-badge {
+      display: inline-block;
+      background: var(--blue-mid);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Book List ── */
+    #book-section { display: none; }
+    .class-group { margin-bottom: 20px; }
+    .class-heading {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--blue-mid);
+      background: #eaf3fb;
+      padding: 6px 12px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+    .book-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--bg);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+      transition: border-color 0.15s;
+    }
+    .book-item:focus-within { border-color: var(--blue-light); background: #fff; }
+    .book-label {
+      flex: 1;
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.35;
+    }
+    .book-label small {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-weight: 400;
+    }
+    .shortage-input {
+      width: 76px;
+      padding: 10px 10px;
+      font-size: 1.05rem;
+      font-family: 'DM Mono', monospace;
+      font-weight: 600;
+      text-align: center;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+      -webkit-appearance: none;
+      flex-shrink: 0;
+    }
+    .shortage-input:focus {
+      outline: none;
+      border-color: var(--blue-mid);
+    }
+    .shortage-input.nonzero {
+      border-color: var(--accent);
+      background: var(--accent-light);
+      color: #b7770d;
+    }
+
+    /* ── Totals Bar ── */
+    #totals-bar {
+      display: none;
+      background: var(--blue-dark);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #totals-bar span { font-size: 0.82rem; opacity: 0.8; }
+    #totals-bar strong { font-size: 1.2rem; font-family: 'DM Mono', monospace; }
+
+    /* ── Spinner ── */
+    .spinner-wrap {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    .spinner-wrap.show { display: flex; }
+    .spinner {
+      width: 24px; height: 24px;
+      border: 3px solid var(--border);
+      border-top-color: var(--blue-mid);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Sticky Submit ── */
+    .submit-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: #fff;
+      border-top: 1px solid var(--border);
+      padding: 12px 16px;
+      display: none;
+      z-index: 200;
+      box-shadow: 0 -4px 20px rgba(15,61,92,0.10);
+    }
+    .submit-bar.show { display: block; }
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--blue-mid), var(--blue-dark));
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .submit-btn:active { transform: scale(0.98); opacity: 0.9; }
+    .submit-btn:disabled { background: var(--muted); cursor: not-allowed; }
+
+    /* ── Success Screen ── */
+    #success-screen {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    #success-screen .check {
+      font-size: 3.5rem;
+      margin-bottom: 16px;
+    }
+    #success-screen h2 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--green);
+      margin-bottom: 8px;
+    }
+    #success-screen p {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-bottom: 24px;
+    }
+    .new-entry-btn {
+      padding: 14px 28px;
+      background: var(--blue-mid);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* ── Offline Banner ── */
+    #offline-banner {
+      display: none;
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffc107;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    /* ── Pending Sync ── */
+    #pending-banner {
+      display: none;
+      background: #e8f5e9;
+      color: #2e7d32;
+      border: 1px solid #a5d6a7;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      margin-bottom: 12px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 360px) {
+      .school-grid { grid-template-columns: 1fr; }
+      .school-name-full { grid-column: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-row">
+    <div class="header-icon">📚</div>
+    <div>
+      <h1>FTB Shortage Collection</h1>
+      <p>Government Schools · Assam Education</p>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="offline-banner">⚠️ You are offline. Data will be saved locally and synced when online.</div>
+  <div id="pending-banner" onclick="syncPending()">📤 You have pending offline submissions. Tap to sync now.</div>
+
+  <!-- UDISE Section -->
+  <div class="card" id="form-section">
+    <div class="card-title">Enter UDISE Code</div>
+    <div class="udise-row">
+      <input
+        type="tel"
+        id="udise-input"
+        class="udise-input"
+        placeholder="11-digit UDISE"
+        maxlength="11"
+        inputmode="numeric"
+        autocomplete="off"
+      />
+      <button class="fetch-btn" id="fetch-btn" onclick="fetchSchool()">Fetch</button>
+    </div>
+    <div class="alert alert-error" id="udise-error"></div>
+    <div class="alert alert-info" id="udise-info"></div>
+
+    <div class="spinner-wrap" id="fetch-spinner">
+      <div class="spinner"></div>
+      <span>Fetching school details…</span>
+    </div>
+  </div>
+
+  <!-- School Details -->
+  <div class="card" id="school-details">
+    <div class="card-title">School Information</div>
+    <div class="school-grid">
+      <div class="school-field school-name-full">
+        <div class="school-field-label">School Name</div>
+        <div class="school-field-value" id="det-school"></div>
+      </div>
+      <div class="school-field">
+        <div class="school-field-label">District</div>
+        <div class="school-field-value" id="det-district"></div>
+      </div>
+      <div class="school-field">
+        <div class="school-field-label">Block</div>
+        <div class="school-field-value" id="det-block"></div>
+      </div>
+      <div class="school-field">
+        <div class="school-field-label">Cluster</div>
+        <div class="school-field-value" id="det-cluster"></div>
+      </div>
+      <div class="school-field">
+        <div class="school-field-label">Medium</div>
+        <div class="school-field-value"><span class="medium-badge" id="det-medium"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Totals Bar -->
+  <div id="totals-bar" style="display:none;">
+    <span>Total Shortage</span>
+    <strong id="total-count">0</strong>
+  </div>
+
+  <!-- Book Section -->
+  <div id="book-section">
+    <div class="card">
+      <div class="card-title">Enter Book Shortages</div>
+      <div id="book-list"></div>
+
+      <div class="spinner-wrap" id="book-spinner">
+        <div class="spinner"></div>
+        <span>Loading book list…</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Screen -->
+  <div id="success-screen">
+    <div class="check">✅</div>
+    <h2>Data Submitted Successfully!</h2>
+    <p id="success-msg">Shortage data for the school has been recorded.</p>
+    <button class="new-entry-btn" onclick="resetForm()">+ New Entry</button>
+  </div>
+</main>
+
+<!-- Sticky Submit -->
+<div class="submit-bar" id="submit-bar">
+  <button class="submit-btn" id="submit-btn" onclick="submitData()">Submit Shortage Data</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CONFIGURATION — Update these URLs before deployment
+// ═══════════════════════════════════════════════════════════
+const CONFIG = {
+  // Your Google Apps Script Web App URL for schools data
+  SCHOOLS_API: 'https://script.google.com/macros/s/AKfycbwhl6Xo0UpdZssFVTwDMlFJ2BzE9E9vMHa44Tsd8eDua7FOoH1jG20pJGqMRldwf-Ux/exec?action=schools',
+  // Your Google Apps Script Web App URL for books data
+  BOOKS_API: 'https://script.google.com/macros/s/AKfycbwhl6Xo0UpdZssFVTwDMlFJ2BzE9E9vMHa44Tsd8eDua7FOoH1jG20pJGqMRldwf-Ux/exec?action=books',
+  // Your Google Apps Script Web App URL to submit data
+  SUBMIT_API: 'https://script.google.com/macros/s/AKfycbwhl6Xo0UpdZssFVTwDMlFJ2BzE9E9vMHa44Tsd8eDua7FOoH1jG20pJGqMRldwf-Ux/exec?action=submit',
+};
+
+// ═══════════════════════════════════════════════════════════
+// DEMO DATA (remove once connected to real Google Sheets)
+// ═══════════════════════════════════════════════════════════
+const DEMO_SCHOOLS = [
+  { udise: '18010100101', school: 'Kamakhya Primary School', district: 'Kamrup Metro', block: 'Dispur', cluster: 'Cluster-A', category: 'Primary', management: 'Government', medium: 'Assamese' },
+  { udise: '18010100102', school: 'Nalbari Boys LP School', district: 'Nalbari', block: 'Nalbari', cluster: 'Cluster-B', category: 'Primary', management: 'Government', medium: 'Assamese' },
+  { udise: '18010100103', school: 'Hindi Vidyalaya Guwahati', district: 'Kamrup Metro', block: 'Guwahati', cluster: 'Cluster-C', category: 'Primary', management: 'Government', medium: 'Hindi' },
+  { udise: '18010100104', school: 'Bengali LP School Bongaigaon', district: 'Bongaigaon', block: 'Bijni', cluster: 'Cluster-D', category: 'Primary', management: 'Government', medium: 'Bengali' },
+];
+
+const DEMO_BOOKS = [
+  // Assamese Medium
+  { medium: 'Assamese', class: 'Class I', book: 'Jhankar' },
+  { medium: 'Assamese', class: 'Class I', book: 'Akanir Ganit' },
+  { medium: 'Assamese', class: 'Class I', book: 'Paribesh Adhyayan' },
+  { medium: 'Assamese', class: 'Class II', book: 'Jhankar Part II' },
+  { medium: 'Assamese', class: 'Class II', book: 'Ganit Part II' },
+  { medium: 'Assamese', class: 'Class II', book: 'Paribesh Part II' },
+  { medium: 'Assamese', class: 'Class III', book: 'Prabah' },
+  { medium: 'Assamese', class: 'Class III', book: 'Ganit Taranga' },
+  { medium: 'Assamese', class: 'Class III', book: 'Hamaar Samaj' },
+  { medium: 'Assamese', class: 'Class IV', book: 'Prabah Part II' },
+  { medium: 'Assamese', class: 'Class IV', book: 'Ganit Taranga Part II' },
+  { medium: 'Assamese', class: 'Class V', book: 'Sagar Sangam' },
+  { medium: 'Assamese', class: 'Class V', book: 'Anka Projapati' },
+  // Hindi Medium
+  { medium: 'Hindi', class: 'Class I', book: 'Rimjhim' },
+  { medium: 'Hindi', class: 'Class I', book: 'Ganit Ka Jadoo' },
+  { medium: 'Hindi', class: 'Class II', book: 'Rimjhim Part II' },
+  { medium: 'Hindi', class: 'Class II', book: 'Ganit Ka Jadoo Part II' },
+  { medium: 'Hindi', class: 'Class III', book: 'Rimjhim Part III' },
+  { medium: 'Hindi', class: 'Class III', book: 'Ganit Ka Jadoo Part III' },
+  { medium: 'Hindi', class: 'Class IV', book: 'Rimjhim Part IV' },
+  { medium: 'Hindi', class: 'Class V', book: 'Rimjhim Part V' },
+  // Bengali Medium
+  { medium: 'Bengali', class: 'Class I', book: 'Amader Bangla' },
+  { medium: 'Bengali', class: 'Class I', book: 'Ganit Parichay' },
+  { medium: 'Bengali', class: 'Class II', book: 'Amader Bangla Part II' },
+  { medium: 'Bengali', class: 'Class II', book: 'Ganit Parichay Part II' },
+  { medium: 'Bengali', class: 'Class III', book: 'Sahaj Path' },
+  { medium: 'Bengali', class: 'Class IV', book: 'Sahaj Path Part II' },
+  { medium: 'Bengali', class: 'Class V', book: 'Sahaj Path Part III' },
+];
+
+// ═══════════════════════════════════════════════════════════
+// APP STATE
+// ═══════════════════════════════════════════════════════════
+let currentSchool = null;
+let allBooks = [];
+let submitted = new Set(JSON.parse(localStorage.getItem('submitted_udise') || '[]'));
+
+// ═══════════════════════════════════════════════════════════
+// OFFLINE DETECTION
+// ═══════════════════════════════════════════════════════════
+function updateOnlineStatus() {
+  const banner = document.getElementById('offline-banner');
+  banner.style.display = navigator.onLine ? 'none' : 'block';
+  checkPending();
+}
+window.addEventListener('online', () => { updateOnlineStatus(); syncPending(); });
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
+
+function checkPending() {
+  const pending = JSON.parse(localStorage.getItem('pending_submissions') || '[]');
+  const pb = document.getElementById('pending-banner');
+  pb.style.display = (pending.length > 0 && navigator.onLine) ? 'block' : 'none';
+  if (pending.length > 0) pb.textContent = `📤 ${pending.length} offline submission(s) pending. Tap to sync.`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// FETCH SCHOOL DATA
+// ═══════════════════════════════════════════════════════════
+async function fetchSchool() {
+  const input = document.getElementById('udise-input');
+  const udise = input.value.trim();
+
+  clearMessages();
+  if (!/^\d{11}$/.test(udise)) {
+    showError('udise-error', '⚠️ UDISE must be exactly 11 digits.');
+    input.classList.add('error');
+    return;
+  }
+  input.classList.remove('error', 'success');
+
+  if (submitted.has(udise)) {
+    const confirmRe = confirm('Data for this UDISE was already submitted. Submit again?');
+    if (!confirmRe) return;
+  }
+
+  showSpinner('fetch-spinner');
+  document.getElementById('fetch-btn').disabled = true;
+  document.getElementById('school-details').style.display = 'none';
+  document.getElementById('book-section').style.display = 'none';
+  document.getElementById('submit-bar').classList.remove('show');
+  document.getElementById('totals-bar').style.display = 'none';
+
+  try {
+    let school = null;
+
+    // Try real API first, fall back to demo
+    if (CONFIG.SCHOOLS_API.includes('YOUR_SCRIPT_ID')) {
+      school = DEMO_SCHOOLS.find(s => s.udise === udise);
+    } else {
+      const cached = getCachedSchools();
+      if (cached) {
+        school = cached.find(s => s.udise === udise);
+      } else {
+        const res = await fetch(CONFIG.SCHOOLS_API);
+        const data = await res.json();
+        localStorage.setItem('cached_schools', JSON.stringify({ ts: Date.now(), data }));
+        school = data.find(s => s.udise === udise);
+      }
+    }
+
+    if (!school) {
+      showError('udise-error', '❌ UDISE not found. Please check the code.');
+      input.classList.add('error');
+    } else {
+      input.classList.add('success');
+      currentSchool = school;
+      renderSchoolDetails(school);
+      await loadBooks(school.medium);
+    }
+  } catch (err) {
+    showError('udise-error', '⚠️ Network error. Check your connection.');
+  }
+
+  hideSpinner('fetch-spinner');
+  document.getElementById('fetch-btn').disabled = false;
+}
+
+function getCachedSchools() {
+  try {
+    const c = JSON.parse(localStorage.getItem('cached_schools') || 'null');
+    if (c && Date.now() - c.ts < 6 * 60 * 60 * 1000) return c.data; // 6hr cache
+  } catch {}
+  return null;
+}
+
+function renderSchoolDetails(s) {
+  document.getElementById('det-school').textContent = s.school;
+  document.getElementById('det-district').textContent = s.district;
+  document.getElementById('det-block').textContent = s.block;
+  document.getElementById('det-cluster').textContent = s.cluster;
+  document.getElementById('det-medium').textContent = s.medium;
+  document.getElementById('school-details').style.display = 'block';
+}
+
+// ═══════════════════════════════════════════════════════════
+// LOAD BOOKS
+// ═══════════════════════════════════════════════════════════
+async function loadBooks(medium) {
+  document.getElementById('book-section').style.display = 'block';
+  showSpinner('book-spinner');
+  document.getElementById('book-list').innerHTML = '';
+
+  try {
+    let books = [];
+    if (CONFIG.BOOKS_API.includes('YOUR_SCRIPT_ID')) {
+      books = DEMO_BOOKS;
+    } else {
+      const cached = getCachedBooks();
+      if (cached) {
+        books = cached;
+      } else {
+        const res = await fetch(CONFIG.BOOKS_API);
+        books = await res.json();
+        localStorage.setItem('cached_books', JSON.stringify({ ts: Date.now(), data: books }));
+      }
+    }
+
+    allBooks = books.filter(b => b.medium === medium);
+    renderBookList(allBooks);
+    document.getElementById('submit-bar').classList.add('show');
+    document.getElementById('totals-bar').style.display = 'flex';
+    updateTotal();
+  } catch (err) {
+    document.getElementById('book-list').innerHTML = '<p style="color:var(--red);padding:12px;">Failed to load book list.</p>';
+  }
+
+  hideSpinner('book-spinner');
+}
+
+function getCachedBooks() {
+  try {
+    const c = JSON.parse(localStorage.getItem('cached_books') || 'null');
+    if (c && Date.now() - c.ts < 24 * 60 * 60 * 1000) return c.data;
+  } catch {}
+  return null;
+}
+
+function renderBookList(books) {
+  const container = document.getElementById('book-list');
+  const grouped = {};
+  books.forEach(b => {
+    if (!grouped[b.class]) grouped[b.class] = [];
+    grouped[b.class].push(b);
+  });
+
+  const classOrder = Object.keys(grouped).sort((a, b) => {
+    const n = x => parseInt(x.replace(/\D+/g, '')) || 0;
+    return n(a) - n(b);
+  });
+
+  classOrder.forEach((cls, ci) => {
+    const group = document.createElement('div');
+    group.className = 'class-group';
+    group.innerHTML = `<div class="class-heading">${cls}</div>`;
+
+    grouped[cls].forEach((book, bi) => {
+      const id = `book_${ci}_${bi}`;
+      const item = document.createElement('div');
+      item.className = 'book-item';
+      item.innerHTML = `
+        <div class="book-label">
+          ${book.book}
+          <small>${cls}</small>
+        </div>
+        <input
+          type="number"
+          class="shortage-input"
+          id="${id}"
+          value="0"
+          min="0"
+          inputmode="numeric"
+          data-class="${book.class}"
+          data-book="${book.book}"
+          onchange="validateInput(this)"
+          oninput="onShortageInput(this)"
+        />
+      `;
+      group.appendChild(item);
+    });
+
+    container.appendChild(group);
+  });
+}
+
+function onShortageInput(el) {
+  if (parseInt(el.value) < 0) el.value = 0;
+  el.classList.toggle('nonzero', parseInt(el.value) > 0);
+  updateTotal();
+
+  // Auto-focus next input
+  const inputs = Array.from(document.querySelectorAll('.shortage-input'));
+  const idx = inputs.indexOf(el);
+  if (idx >= 0 && idx < inputs.length - 1 && el.value !== '' && parseInt(el.value) > 0) {
+    // Don't auto-jump — user might still be typing
+  }
+}
+
+function validateInput(el) {
+  if (el.value === '' || parseInt(el.value) < 0) el.value = 0;
+  el.classList.toggle('nonzero', parseInt(el.value) > 0);
+  updateTotal();
+}
+
+function updateTotal() {
+  const inputs = document.querySelectorAll('.shortage-input');
+  let total = 0;
+  inputs.forEach(i => total += parseInt(i.value) || 0);
+  document.getElementById('total-count').textContent = total;
+}
+
+// ═══════════════════════════════════════════════════════════
+// SUBMIT
+// ═══════════════════════════════════════════════════════════
+async function submitData() {
+  if (!currentSchool) return;
+
+  const inputs = document.querySelectorAll('.shortage-input');
+  const rows = [];
+  const ts = new Date().toISOString();
+
+  inputs.forEach(inp => {
+    rows.push({
+      timestamp: ts,
+      udise: currentSchool.udise,
+      school: currentSchool.school,
+      district: currentSchool.district,
+      block: currentSchool.block,
+      cluster: currentSchool.cluster,
+      medium: currentSchool.medium,
+      class: inp.dataset.class,
+      book: inp.dataset.book,
+      shortage: parseInt(inp.value) || 0,
+    });
+  });
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+
+  if (!navigator.onLine) {
+    saveOffline(rows);
+    btn.disabled = false;
+    btn.textContent = 'Submit Shortage Data';
+    showSuccessScreen(true);
+    return;
+  }
+
+  try {
+    if (CONFIG.SUBMIT_API.includes('YOUR_SCRIPT_ID')) {
+      // Demo mode: just simulate
+      await new Promise(r => setTimeout(r, 1200));
+      markSubmitted(currentSchool.udise);
+      showSuccessScreen(false);
+    } else {
+      const res = await fetch(CONFIG.SUBMIT_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows }),
+      });
+      if (!res.ok) throw new Error('Server error');
+      markSubmitted(currentSchool.udise);
+      showSuccessScreen(false);
+    }
+  } catch (err) {
+    saveOffline(rows);
+    showSuccessScreen(true);
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Submit Shortage Data';
+}
+
+function markSubmitted(udise) {
+  submitted.add(udise);
+  localStorage.setItem('submitted_udise', JSON.stringify([...submitted]));
+}
+
+function saveOffline(rows) {
+  const pending = JSON.parse(localStorage.getItem('pending_submissions') || '[]');
+  pending.push({ ts: Date.now(), rows });
+  localStorage.setItem('pending_submissions', JSON.stringify(pending));
+  markSubmitted(currentSchool.udise);
+}
+
+async function syncPending() {
+  if (!navigator.onLine) return;
+  const pending = JSON.parse(localStorage.getItem('pending_submissions') || '[]');
+  if (pending.length === 0) return;
+  if (CONFIG.SUBMIT_API.includes('YOUR_SCRIPT_ID')) {
+    // Demo: just clear
+    localStorage.removeItem('pending_submissions');
+    checkPending();
+    return;
+  }
+  const failed = [];
+  for (const batch of pending) {
+    try {
+      const res = await fetch(CONFIG.SUBMIT_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows: batch.rows }),
+      });
+      if (!res.ok) failed.push(batch);
+    } catch { failed.push(batch); }
+  }
+  localStorage.setItem('pending_submissions', JSON.stringify(failed));
+  checkPending();
+  if (failed.length === 0) alert('All offline data synced successfully!');
+}
+
+// ═══════════════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════════════
+function showSuccessScreen(offline) {
+  document.getElementById('form-section').style.display = 'none';
+  document.getElementById('school-details').style.display = 'none';
+  document.getElementById('book-section').style.display = 'none';
+  document.getElementById('totals-bar').style.display = 'none';
+  document.getElementById('submit-bar').classList.remove('show');
+
+  const screen = document.getElementById('success-screen');
+  const msg = document.getElementById('success-msg');
+  screen.style.display = 'block';
+  if (offline) {
+    screen.querySelector('.check').textContent = '💾';
+    screen.querySelector('h2').textContent = 'Saved Offline';
+    screen.querySelector('h2').style.color = 'var(--accent)';
+    msg.textContent = 'No internet detected. Data saved locally and will sync when online.';
+  } else {
+    screen.querySelector('.check').textContent = '✅';
+    screen.querySelector('h2').textContent = 'Submitted Successfully!';
+    screen.querySelector('h2').style.color = 'var(--green)';
+    msg.textContent = `Shortage data for ${currentSchool.school} has been recorded.`;
+  }
+  checkPending();
+}
+
+function resetForm() {
+  document.getElementById('form-section').style.display = 'block';
+  document.getElementById('success-screen').style.display = 'none';
+  document.getElementById('udise-input').value = '';
+  document.getElementById('udise-input').classList.remove('error', 'success');
+  document.getElementById('school-details').style.display = 'none';
+  document.getElementById('book-section').style.display = 'none';
+  document.getElementById('totals-bar').style.display = 'none';
+  document.getElementById('submit-bar').classList.remove('show');
+  document.getElementById('book-list').innerHTML = '';
+  currentSchool = null;
+  clearMessages();
+  document.getElementById('udise-input').focus();
+}
+
+function clearMessages() {
+  document.getElementById('udise-error').classList.remove('show');
+  document.getElementById('udise-info').classList.remove('show');
+}
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+function showSpinner(id) { document.getElementById(id).classList.add('show'); }
+function hideSpinner(id) { document.getElementById(id).classList.remove('show'); }
+
+// Enter key on UDISE input
+document.getElementById('udise-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') fetchSchool();
+});
+
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(err => {
+    console.warn('Service worker registration failed:', err);
+  });
+}
+</script>
+</body>
+</html>
