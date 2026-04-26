@@ -1,3 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>FTB Shortage Collection</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Optional PWA (safe to keep) -->
+  <link rel="manifest" href="manifest.json">
+</head>
+
+<body>
+
+  <h2>FTB Shortage Collection</h2>
+
+  <!-- UDISE Input -->
+  <input id="udise" placeholder="Enter UDISE" />
+  <button onclick="fetchSchool()">Fetch</button>
+
+  <div id="school-info"></div>
+
+  <!-- Books Section -->
+  <div id="books"></div>
+
+  <button id="submit-btn" onclick="submitData()">Submit</button>
+
+  <div id="status"></div>
+
 <script>
 const CONFIG = {
   SCHOOLS_API: 'https://script.google.com/macros/s/AKfycbwhl6Xo0UpdZssFVTwDMlFJ2BzE9E9vMHa44Tsd8eDua7FOoH1jG20pJGqMRldwf-Ux/exec?action=schools',
@@ -6,23 +35,62 @@ const CONFIG = {
 };
 
 let currentSchool = null;
-let submitted = new Set(JSON.parse(localStorage.getItem('submitted_udise') || '[]'));
+let booksData = [];
 
-function checkPending() {
-  const pending = JSON.parse(localStorage.getItem('pending_submissions') || '[]');
-  const pb = document.getElementById('pending-banner');
-  pb.style.display = (pending.length > 0 && navigator.onLine) ? 'block' : 'none';
+
+// ================= FETCH SCHOOL =================
+async function fetchSchool() {
+  const udise = document.getElementById('udise').value;
+
+  const res = await fetch(CONFIG.SCHOOLS_API);
+  const data = await res.json();
+
+  currentSchool = data.find(s => s.udise === udise);
+
+  if (!currentSchool) {
+    alert("School not found");
+    return;
+  }
+
+  document.getElementById('school-info').innerHTML =
+    `<b>${currentSchool.school}</b><br>${currentSchool.district}`;
+
+  loadBooks();
 }
 
+
+// ================= LOAD BOOKS =================
+async function loadBooks() {
+  const res = await fetch(CONFIG.BOOKS_API);
+  booksData = await res.json();
+
+  let html = "";
+
+  booksData.forEach(b => {
+    html += `
+      <div>
+        ${b.book}
+        <input type="number" class="shortage-input"
+          data-book="${b.book}"
+          data-class="${b.class}">
+      </div>
+    `;
+  });
+
+  document.getElementById('books').innerHTML = html;
+}
+
+
+// ================= SUBMIT =================
 async function submitData() {
-  if (!currentSchool) return;
+  if (!currentSchool) return alert("Fetch school first");
 
+  const inputs = document.querySelectorAll('.shortage-input');
   const rows = [];
-  const ts = new Date().toISOString();
 
-  document.querySelectorAll('.shortage-input').forEach(inp => {
+  inputs.forEach(inp => {
     rows.push({
-      timestamp: ts,
+      timestamp: new Date().toISOString(),
       udise: currentSchool.udise,
       school: currentSchool.school,
       district: currentSchool.district,
@@ -35,10 +103,6 @@ async function submitData() {
     });
   });
 
-  const btn = document.getElementById('submit-btn');
-  btn.disabled = true;
-  btn.textContent = 'Submitting…';
-
   try {
     const res = await fetch(CONFIG.SUBMIT_API, {
       method: 'POST',
@@ -46,66 +110,18 @@ async function submitData() {
       body: JSON.stringify({ rows })
     });
 
-    if (!res.ok) throw new Error("Server error");
-
     const result = await res.json();
 
     if (result.error) throw new Error(result.error);
 
-    markSubmitted(currentSchool.udise);
-    showSuccessScreen(false);
+    document.getElementById('status').innerText = "✅ Submitted successfully";
 
   } catch (err) {
-    console.error("Submit Error:", err);
-    saveOffline(rows);
-    showSuccessScreen(true);
+    console.error(err);
+    document.getElementById('status').innerText = "❌ Submission failed";
   }
-
-  btn.disabled = false;
-  btn.textContent = 'Submit Shortage Data';
-}
-
-function saveOffline(rows) {
-  const pending = JSON.parse(localStorage.getItem('pending_submissions') || '[]');
-  pending.push({ ts: Date.now(), rows });
-  localStorage.setItem('pending_submissions', JSON.stringify(pending));
-}
-
-async function syncPending() {
-  if (!navigator.onLine) return;
-
-  const pending = JSON.parse(localStorage.getItem('pending_submissions') || '[]');
-  if (pending.length === 0) return;
-
-  const failed = [];
-
-  for (const batch of pending) {
-    try {
-      const res = await fetch(CONFIG.SUBMIT_API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rows: batch.rows })
-      });
-
-      if (!res.ok) throw new Error();
-
-    } catch {
-      failed.push(batch);
-    }
-  }
-
-  localStorage.setItem('pending_submissions', JSON.stringify(failed));
-  checkPending();
-
-  if (failed.length === 0) {
-    alert("✅ All offline data synced successfully!");
-  } else {
-    alert("⚠️ Some data still failed. Try again.");
-  }
-}
-
-function markSubmitted(udise) {
-  submitted.add(udise);
-  localStorage.setItem('submitted_udise', JSON.stringify([...submitted]));
 }
 </script>
+
+</body>
+</html>
