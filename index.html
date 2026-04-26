@@ -3,29 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <title>FTB Shortage Collection</title>
-
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <!-- Optional PWA (safe to keep) -->
-  <link rel="manifest" href="manifest.json">
 </head>
 
-<body>
+<body style="font-family: Arial; padding: 20px;">
 
   <h2>FTB Shortage Collection</h2>
 
-  <!-- UDISE Input -->
-  <input id="udise" placeholder="Enter UDISE" />
+  <!-- UDISE -->
+  <input id="udise" placeholder="Enter 11-digit UDISE" />
   <button onclick="fetchSchool()">Fetch</button>
 
-  <div id="school-info"></div>
+  <div id="school-info" style="margin-top:10px;"></div>
 
-  <!-- Books Section -->
-  <div id="books"></div>
+  <!-- Books -->
+  <div id="books" style="margin-top:20px;"></div>
 
-  <button id="submit-btn" onclick="submitData()">Submit</button>
+  <button id="submit-btn" onclick="submitData()" style="margin-top:20px;">
+    Submit
+  </button>
 
-  <div id="status"></div>
+  <div id="status" style="margin-top:15px; font-weight:bold;"></div>
+
 
 <script>
 const CONFIG = {
@@ -35,25 +34,34 @@ const CONFIG = {
 };
 
 let currentSchool = null;
-let booksData = [];
 
 
 // ================= FETCH SCHOOL =================
 async function fetchSchool() {
-  const udise = document.getElementById('udise').value;
+  const udise = document.getElementById('udise').value.trim();
+
+  if (udise.length !== 11) {
+    alert("Enter valid 11-digit UDISE");
+    return;
+  }
 
   const res = await fetch(CONFIG.SCHOOLS_API);
   const data = await res.json();
 
-  currentSchool = data.find(s => s.udise === udise);
+  const school = data.find(s => String(s.udise).trim() === udise);
 
-  if (!currentSchool) {
+  if (!school) {
     alert("School not found");
     return;
   }
 
+  currentSchool = school;
+
   document.getElementById('school-info').innerHTML =
-    `<b>${currentSchool.school}</b><br>${currentSchool.district}`;
+    `<b>${school.school}</b><br>
+     District: ${school.district}<br>
+     Block: ${school.block}<br>
+     Medium: ${school.medium}`;
 
   loadBooks();
 }
@@ -62,17 +70,20 @@ async function fetchSchool() {
 // ================= LOAD BOOKS =================
 async function loadBooks() {
   const res = await fetch(CONFIG.BOOKS_API);
-  booksData = await res.json();
+  const data = await res.json();
+
+  const books = data.filter(b => b.medium === currentSchool.medium);
 
   let html = "";
 
-  booksData.forEach(b => {
+  books.forEach(b => {
     html += `
-      <div>
-        ${b.book}
+      <div style="margin-bottom:10px;">
+        ${b.book} (${b.class})
         <input type="number" class="shortage-input"
           data-book="${b.book}"
-          data-class="${b.class}">
+          data-class="${b.class}"
+          placeholder="0">
       </div>
     `;
   });
@@ -83,7 +94,10 @@ async function loadBooks() {
 
 // ================= SUBMIT =================
 async function submitData() {
-  if (!currentSchool) return alert("Fetch school first");
+  if (!currentSchool) {
+    alert("Fetch school first");
+    return;
+  }
 
   const inputs = document.querySelectorAll('.shortage-input');
   const rows = [];
@@ -114,7 +128,7 @@ async function submitData() {
 
     if (result.error) throw new Error(result.error);
 
-    document.getElementById('status').innerText = "✅ Submitted successfully";
+    document.getElementById('status').innerText = "✅ Data submitted successfully";
 
   } catch (err) {
     console.error(err);
