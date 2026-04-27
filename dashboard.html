@@ -10,59 +10,57 @@ body {
   font-family: 'Segoe UI', sans-serif;
   background: #f5f7fb;
   margin: 0;
-  padding: 15px;
 }
 
 .container {
-  max-width: 1000px;
+  max-width: 1100px;
   margin: auto;
+  padding: 15px;
 }
 
 .card {
   background: white;
   padding: 15px;
   border-radius: 10px;
-  margin-bottom: 15px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  margin-bottom: 15px;
 }
 
-h2, h3 {
-  margin-bottom: 10px;
-}
-
-.grid {
+.flex {
   display: flex;
   gap: 10px;
-  flex-wrap: wrap;
 }
 
 .box {
   flex: 1;
-  min-width: 150px;
-  background: #2563eb;
+  padding: 20px;
   color: white;
-  padding: 15px;
-  border-radius: 8px;
+  border-radius: 10px;
   text-align: center;
 }
 
-button {
-  padding: 10px;
-  background: #16a34a;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
+.blue { background: #2563eb; }
+.green { background: #16a34a; }
+.orange { background: #f59e0b; }
 
 table {
   width: 100%;
   border-collapse: collapse;
 }
 
-td, th {
+th, td {
   padding: 8px;
   border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+
+button {
+  background: #16a34a;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
 }
 </style>
 </head>
@@ -73,40 +71,47 @@ td, th {
 
   <h2>📊 FTB Dashboard</h2>
 
-  <!-- SUMMARY -->
-  <div class="grid">
-    <div class="box">
-      <h3 id="schools">0</h3>
+  <div class="flex">
+    <div class="box blue">
+      <h2 id="schools">0</h2>
       Schools Submitted
     </div>
-
-    <div class="box" style="background:#059669">
-      <h3 id="total">0</h3>
+    <div class="box green">
+      <h2 id="shortage">0</h2>
       Total Shortage
+    </div>
+    <div class="box orange">
+      <h2 id="excess">0</h2>
+      Total Excess
     </div>
   </div>
 
-  <!-- TOP BOOKS -->
   <div class="card">
-    <h3>📚 Top Shortage Books</h3>
-    <div id="topBooks"></div>
+    <h3>📚 Top Shortage Books (Class-wise)</h3>
+    <div id="topShortage"></div>
   </div>
 
-  <!-- DISTRICT TABLE -->
   <div class="card">
-    <h3>📍 District Summary</h3>
+    <h3>📦 Top Excess Books (Class-wise)</h3>
+    <div id="topExcess"></div>
+  </div>
+
+  <div class="card">
+    <h3>📍 Block + Cluster + Class Summary</h3>
     <table>
       <thead>
         <tr>
-          <th>District</th>
-          <th>Total Shortage</th>
+          <th>Block</th>
+          <th>Cluster</th>
+          <th>Class</th>
+          <th>Shortage</th>
+          <th>Excess</th>
         </tr>
       </thead>
-      <tbody id="districtTable"></tbody>
+      <tbody id="summaryTable"></tbody>
     </table>
   </div>
 
-  <!-- DOWNLOAD -->
   <div class="card">
     <button onclick="downloadExcel()">⬇ Download Excel Report</button>
   </div>
@@ -114,82 +119,89 @@ td, th {
 </div>
 
 <script>
-const BASE_URL = "https://script.google.com/macros/s/AKfycbwhl6Xo0UpdZssFVTwDMlFJ2BzE9E9vMHa44Tsd8eDua7FOoH1jG20pJGqMRldwf-Ux/exec";
-
-let fullData = [];
+const API = "https://script.google.com/macros/s/AKfycbwhl6Xo0UpdZssFVTwDMlFJ2BzE9E9vMHa44Tsd8eDua7FOoH1jG20pJGqMRldwf-Ux/exec?action=data";
 
 async function loadDashboard() {
-  const res = await fetch(BASE_URL + "?action=data");
+  const res = await fetch(API);
   const data = await res.json();
 
-  fullData = data;
-
   const schools = new Set();
-  let total = 0;
+  let totalShortage = 0;
+  let totalExcess = 0;
 
-  const bookMap = {};
-  const districtMap = {};
+  const bookShortage = {};
+  const bookExcess = {};
+  const summary = {};
 
   data.forEach(r => {
     schools.add(r.udise);
-    total += Number(r.shortage) || 0;
 
-    // book summary
-    if (!bookMap[r.book]) bookMap[r.book] = 0;
-    bookMap[r.book] += Number(r.shortage) || 0;
+    const shortage = Number(r.shortage) || 0;
+    const excess = Number(r.excess) || 0;
 
-    // district summary
-    if (!districtMap[r.district]) districtMap[r.district] = 0;
-    districtMap[r.district] += Number(r.shortage) || 0;
+    totalShortage += shortage;
+    totalExcess += excess;
+
+    // ✅ Book + Class combined
+    const bookKey = `${r.book} (${r.class})`;
+
+    bookShortage[bookKey] = (bookShortage[bookKey] || 0) + shortage;
+    bookExcess[bookKey] = (bookExcess[bookKey] || 0) + excess;
+
+    // ✅ Block + Cluster + Class summary
+    const key = `${r.block}|${r.cluster}|${r.class}`;
+
+    if (!summary[key]) {
+      summary[key] = {
+        block: r.block,
+        cluster: r.cluster,
+        class: r.class,
+        shortage: 0,
+        excess: 0
+      };
+    }
+
+    summary[key].shortage += shortage;
+    summary[key].excess += excess;
   });
 
-  // update UI
   document.getElementById("schools").innerText = schools.size;
-  document.getElementById("total").innerText = total;
+  document.getElementById("shortage").innerText = totalShortage;
+  document.getElementById("excess").innerText = totalExcess;
 
-  // top books
-  let top = Object.entries(bookMap)
-    .sort((a,b)=>b[1]-a[1])
-    .slice(0,5);
+  // Top shortage
+  document.getElementById("topShortage").innerHTML =
+    Object.entries(bookShortage)
+      .sort((a,b)=>b[1]-a[1])
+      .slice(0,5)
+      .map(b => `${b[0]} : <b>${b[1]}</b>`).join("<br>");
 
-  let topHTML = "";
-  top.forEach(b=>{
-    topHTML += `<div>${b[0]} : <b>${b[1]}</b></div>`;
+  // Top excess
+  document.getElementById("topExcess").innerHTML =
+    Object.entries(bookExcess)
+      .sort((a,b)=>b[1]-a[1])
+      .slice(0,5)
+      .map(b => `${b[0]} : <b>${b[1]}</b>`).join("<br>");
+
+  // Summary table
+  let html = "";
+  Object.values(summary).forEach(s => {
+    html += `
+      <tr>
+        <td>${s.block}</td>
+        <td>${s.cluster}</td>
+        <td>${s.class}</td>
+        <td>${s.shortage}</td>
+        <td>${s.excess}</td>
+      </tr>
+    `;
   });
 
-  document.getElementById("topBooks").innerHTML = topHTML;
-
-  // district table
-  let tableHTML = "";
-
-  Object.entries(districtMap)
-    .sort((a,b)=>b[1]-a[1])
-    .forEach(d=>{
-      tableHTML += `<tr>
-        <td>${d[0]}</td>
-        <td>${d[1]}</td>
-      </tr>`;
-    });
-
-  document.getElementById("districtTable").innerHTML = tableHTML;
+  document.getElementById("summaryTable").innerHTML = html;
 }
 
-
-// 📥 Excel Download
 function downloadExcel() {
-  let csv = "UDISE,School,District,Block,Class,Book,Shortage\n";
-
-  fullData.forEach(r => {
-    csv += `${r.udise},${r.school},${r.district},${r.block},${r.class},${r.book},${r.shortage}\n`;
-  });
-
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "FTB_Report.csv";
-  a.click();
+  window.open(API);
 }
 
 loadDashboard();
