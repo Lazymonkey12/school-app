@@ -48,17 +48,10 @@ button {
   margin-bottom: 8px;
 }
 
-.book-row span {
-  flex: 1;
-}
+.book-row span { flex: 1; }
+.book-row span:first-child { flex: 2; }
 
-.book-row span:first-child {
-  flex: 2;
-}
-
-.book-row input {
-  width: 80px;
-}
+.book-row input { width: 80px; }
 
 .header-row {
   font-weight: bold;
@@ -169,17 +162,14 @@ async function loadBooks() {
           <span>${b.book}</span>
 
           <input type="number" class="shortage-input"
-            placeholder="Shortage"
             data-book="${b.book}"
             data-class="${b.class}" value="0">
 
           <input type="number" class="excess-input"
-            placeholder="Excess"
             data-book="${b.book}"
             data-class="${b.class}" value="0">
 
           <input type="text" class="remark-input"
-            placeholder="Remarks"
             data-book="${b.book}"
             data-class="${b.class}">
         </div>
@@ -211,9 +201,12 @@ async function submitData() {
     const sInput = row.querySelector('.shortage-input');
     if (!sInput) return;
 
-    const shortage = row.querySelector('.shortage-input').value;
-    const excess = row.querySelector('.excess-input').value;
-    const remark = row.querySelector('.remark-input').value;
+    const shortage = parseInt(row.querySelector('.shortage-input').value) || 0;
+    const excess = parseInt(row.querySelector('.excess-input').value) || 0;
+    const remark = row.querySelector('.remark-input').value || "";
+
+    // ✅ SKIP EMPTY
+    if (shortage === 0 && excess === 0 && remark.trim() === "") return;
 
     rows.push({
       timestamp: new Date().toISOString(),
@@ -225,11 +218,17 @@ async function submitData() {
       medium: currentSchool.medium,
       class: sInput.dataset.class,
       book: sInput.dataset.book,
-      shortage: parseInt(shortage) || 0,
-      excess: parseInt(excess) || 0,
-      remark: remark || ""
+      shortage,
+      excess,
+      remark
     });
   });
+
+  // ✅ NO DATA CHECK
+  if (rows.length === 0) {
+    alert("⚠️ No data entered");
+    return;
+  }
 
   try {
     const res = await fetch(BASE_URL + "?action=submit", {
