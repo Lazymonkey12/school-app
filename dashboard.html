@@ -119,7 +119,10 @@ button {
 </div>
 
 <script>
-const API = "https://script.google.com/macros/s/AKfycbwhl6Xo0UpdZssFVTwDMlFJ2BzE9E9vMHa44Tsd8eDua7FOoH1jG20pJGqMRldwf-Ux/exec?action=data";
+const BASE = "https://script.google.com/macros/s/AKfycbwhl6Xo0UpdZssFVTwDMlFJ2BzE9E9vMHa44Tsd8eDua7FOoH1jG20pJGqMRldwf-Ux/exec";
+
+const API = BASE + "?action=data";
+const EXPORT_URL = BASE + "?action=export";
 
 async function loadDashboard() {
   const res = await fetch(API);
@@ -142,13 +145,13 @@ async function loadDashboard() {
     totalShortage += shortage;
     totalExcess += excess;
 
-    // ✅ Book + Class combined
+    // Book + Class
     const bookKey = `${r.book} (${r.class})`;
 
     bookShortage[bookKey] = (bookShortage[bookKey] || 0) + shortage;
     bookExcess[bookKey] = (bookExcess[bookKey] || 0) + excess;
 
-    // ✅ Block + Cluster + Class summary
+    // Block + Cluster + Class
     const key = `${r.block}|${r.cluster}|${r.class}`;
 
     if (!summary[key]) {
@@ -183,7 +186,7 @@ async function loadDashboard() {
       .slice(0,5)
       .map(b => `${b[0]} : <b>${b[1]}</b>`).join("<br>");
 
-  // Summary table
+  // Table
   let html = "";
   Object.values(summary).forEach(s => {
     html += `
@@ -200,8 +203,9 @@ async function loadDashboard() {
   document.getElementById("summaryTable").innerHTML = html;
 }
 
+// ✅ FIXED DOWNLOAD
 function downloadExcel() {
-  window.open(API);
+  window.open(EXPORT_URL);
 }
 
 loadDashboard();
