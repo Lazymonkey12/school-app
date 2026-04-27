@@ -27,7 +27,7 @@ body {
 }
 
 input {
-  padding: 8px;
+  padding: 6px;
   border-radius: 6px;
   border: 1px solid #ccc;
 }
@@ -41,19 +41,19 @@ button {
   cursor: pointer;
 }
 
-button:hover {
-  background: #1d4ed8;
-}
-
 .book-row {
   display: flex;
-  justify-content: space-between;
+  gap: 6px;
+  align-items: center;
   margin-bottom: 8px;
-  flex-wrap: wrap;
+}
+
+.book-row span {
+  flex: 2;
 }
 
 .book-row input {
-  width: 70px;
+  width: 80px;
 }
 
 .status {
@@ -94,7 +94,7 @@ const BASE_URL = "https://script.google.com/macros/s/AKfycbwhl6Xo0UpdZssFVTwDMlF
 let currentSchool = null;
 
 
-// ================= FETCH SCHOOL =================
+// FETCH SCHOOL
 async function fetchSchool() {
   const udise = document.getElementById('udise').value.trim();
 
@@ -124,7 +124,7 @@ async function fetchSchool() {
 }
 
 
-// ================= LOAD BOOKS =================
+// LOAD BOOKS
 async function loadBooks() {
   const res = await fetch(BASE_URL + "?action=books");
   const data = await res.json();
@@ -147,9 +147,21 @@ async function loadBooks() {
       html += `
         <div class="book-row">
           <span>${b.book}</span>
+
           <input type="number" class="shortage-input"
+            placeholder="Short"
             data-book="${b.book}"
             data-class="${b.class}" value="0">
+
+          <input type="number" class="excess-input"
+            placeholder="Excess"
+            data-book="${b.book}"
+            data-class="${b.class}" value="0">
+
+          <input type="text" class="remark-input"
+            placeholder="Remark"
+            data-book="${b.book}"
+            data-class="${b.class}">
         </div>
       `;
     });
@@ -159,25 +171,29 @@ async function loadBooks() {
 }
 
 
-// ================= SUBMIT =================
+// SUBMIT
 async function submitData() {
   if (!currentSchool) {
     alert("Fetch school first");
     return;
   }
 
-  // 🚫 Duplicate check
   const submitted = JSON.parse(localStorage.getItem('submitted_udise') || '[]');
 
   if (submitted.includes(currentSchool.udise)) {
-    alert("⚠️ Already submitted for this school");
+    alert("Already submitted");
     return;
   }
 
-  const inputs = document.querySelectorAll('.shortage-input');
   const rows = [];
 
-  inputs.forEach(inp => {
+  document.querySelectorAll('.book-row').forEach(row => {
+    const shortage = row.querySelector('.shortage-input').value;
+    const excess = row.querySelector('.excess-input').value;
+    const remark = row.querySelector('.remark-input').value;
+    const book = row.querySelector('.shortage-input').dataset.book;
+    const cls = row.querySelector('.shortage-input').dataset.class;
+
     rows.push({
       timestamp: new Date().toISOString(),
       udise: currentSchool.udise,
@@ -186,9 +202,11 @@ async function submitData() {
       block: currentSchool.block,
       cluster: currentSchool.cluster,
       medium: currentSchool.medium,
-      class: inp.dataset.class,
-      book: inp.dataset.book,
-      shortage: parseInt(inp.value) || 0
+      class: cls,
+      book: book,
+      shortage: parseInt(shortage) || 0,
+      excess: parseInt(excess) || 0,
+      remark: remark || ""
     });
   });
 
@@ -202,23 +220,19 @@ async function submitData() {
 
     if (result.error) throw new Error(result.error);
 
-    // ✅ Save submission
     submitted.push(currentSchool.udise);
     localStorage.setItem('submitted_udise', JSON.stringify(submitted));
 
-    // 🔒 Lock form
     document.querySelectorAll('input').forEach(i => i.disabled = true);
     document.getElementById('submitBtn').disabled = true;
 
-    // ✅ Message
-    alert("✅ Data submitted successfully");
+    alert("Submitted successfully");
 
     document.getElementById('status').innerText =
-      "✅ Submitted. Editing is disabled.";
+      "Submitted. Locked.";
 
   } catch (err) {
-    console.error(err);
-    alert("❌ Submission failed");
+    alert("Submission failed");
   }
 }
 </script>
