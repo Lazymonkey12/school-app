@@ -13,7 +13,7 @@ body {
 }
 
 .container {
-  max-width: 900px;
+  max-width: 1000px;
   margin: auto;
   padding: 15px;
 }
@@ -27,7 +27,7 @@ body {
 }
 
 input {
-  padding: 6px;
+  padding: 8px;
   border-radius: 6px;
   border: 1px solid #ccc;
 }
@@ -41,23 +41,48 @@ button {
   cursor: pointer;
 }
 
-.book-row {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  margin-bottom: 8px;
+button:hover {
+  background: #1d4ed8;
 }
 
-.book-row span { flex: 1; }
-.book-row span:first-child { flex: 2; }
+/* ===== TABLE STYLE ===== */
+.book-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 15px;
+}
 
-.book-row input { width: 80px; }
-
-.header-row {
-  font-weight: bold;
+.book-table th {
   background: #eef2ff;
-  padding: 6px;
-  border-radius: 6px;
+  padding: 10px;
+  text-align: left;
+}
+
+.book-table td {
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.book-table tr:hover {
+  background: #f9fafb;
+}
+
+.book-table input {
+  width: 80px;
+  text-align: center;
+}
+
+.remark-input {
+  width: 140px !important;
+}
+
+/* ===== INTERACTIVE ===== */
+.highlight-shortage {
+  background: #fee2e2;
+}
+
+.highlight-excess {
+  background: #dcfce7;
 }
 
 .status {
@@ -145,39 +170,70 @@ async function loadBooks() {
   let html = "";
 
   for (let cls in grouped) {
-    html += `
-      <h4>${cls}</h4>
+    html += `<h4>${cls}</h4>`;
 
-      <div class="book-row header-row">
-        <span>Book Name</span>
-        <span>Shortage</span>
-        <span>Excess</span>
-        <span>Remarks</span>
-      </div>
+    html += `
+      <table class="book-table">
+        <thead>
+          <tr>
+            <th style="width:40%">Book Name</th>
+            <th>Shortage</th>
+            <th>Excess</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody>
     `;
 
     grouped[cls].forEach(b => {
       html += `
-        <div class="book-row">
-          <span>${b.book}</span>
+        <tr class="book-row">
+          <td>${b.book}</td>
 
-          <input type="number" class="shortage-input"
-            data-book="${b.book}"
-            data-class="${b.class}" value="0">
+          <td>
+            <input type="number" min="0"
+              class="shortage-input"
+              data-book="${b.book}"
+              data-class="${b.class}" value="0"
+              oninput="highlightRow(this)">
+          </td>
 
-          <input type="number" class="excess-input"
-            data-book="${b.book}"
-            data-class="${b.class}" value="0">
+          <td>
+            <input type="number" min="0"
+              class="excess-input"
+              data-book="${b.book}"
+              data-class="${b.class}" value="0"
+              oninput="highlightRow(this)">
+          </td>
 
-          <input type="text" class="remark-input"
-            data-book="${b.book}"
-            data-class="${b.class}">
-        </div>
+          <td>
+            <input type="text"
+              class="remark-input"
+              placeholder="Remark"
+              data-book="${b.book}"
+              data-class="${b.class}">
+          </td>
+        </tr>
       `;
     });
+
+    html += `</tbody></table>`;
   }
 
   document.getElementById('books').innerHTML = html;
+}
+
+
+// ================= HIGHLIGHT =================
+function highlightRow(input) {
+  const row = input.closest("tr");
+  const shortage = parseInt(row.querySelector('.shortage-input').value) || 0;
+  const excess = parseInt(row.querySelector('.excess-input').value) || 0;
+
+  row.classList.remove("highlight-shortage", "highlight-excess");
+
+  if (shortage > 0) row.classList.add("highlight-shortage");
+  if (excess > 0) row.classList.add("highlight-excess");
 }
 
 
@@ -198,14 +254,14 @@ async function submitData() {
   const rows = [];
 
   document.querySelectorAll('.book-row').forEach(row => {
+
     const sInput = row.querySelector('.shortage-input');
-    if (!sInput) return;
 
     const shortage = parseInt(row.querySelector('.shortage-input').value) || 0;
     const excess = parseInt(row.querySelector('.excess-input').value) || 0;
     const remark = row.querySelector('.remark-input').value || "";
 
-    // ✅ SKIP EMPTY
+    // ❗ Skip empty
     if (shortage === 0 && excess === 0 && remark.trim() === "") return;
 
     rows.push({
@@ -224,9 +280,8 @@ async function submitData() {
     });
   });
 
-  // ✅ NO DATA CHECK
   if (rows.length === 0) {
-    alert("⚠️ No data entered");
+    alert("No data entered");
     return;
   }
 
@@ -246,13 +301,13 @@ async function submitData() {
     document.querySelectorAll('input').forEach(i => i.disabled = true);
     document.getElementById('submitBtn').disabled = true;
 
-    alert("✅ Submitted successfully");
+    alert("Submitted successfully");
 
     document.getElementById('status').innerText =
       "Submitted. Editing locked.";
 
   } catch (err) {
-    alert("❌ Submission failed");
+    alert("Submission failed");
   }
 }
 </script>
