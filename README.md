@@ -174,8 +174,11 @@ Your app will be live at `https://YOUR-USERNAME.github.io/YOUR-REPO-NAME/` withi
 
 ## 👤 Author
 
-**Sanjeev Kumar Gogoi**
-*Education Data Management, Assam*
+**Sanjeev Kumar Gogoi**  
+
+Data Analyst | Education Systems | Assam  
+Working on data collection apps, dashboards, and automation  
+Exploring machine learning and real-world data problems
 
 ---
 
