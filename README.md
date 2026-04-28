@@ -38,9 +38,9 @@ This app eliminates paper-based data collection for FTB shortages. A field worke
 
 ## 🖼️ Screenshots
 
-| UDISE Entry | School Details | Book Shortage Entry |
+| UDISE Entry | Book Entry Table|  Dashboard View |
 |---|---|---|
-| *(screenshot)* | *(screenshot)* | *(screenshot)* |
+|  ![UDISE Entry](screenshots/Data_Entry_Page.png) | ![School Details](screenshots/Book_Entry_Table.png) | ![Book Entry](screenshots/Dashboard_Entry.png) |
 
 ---
 
