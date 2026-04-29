@@ -49,7 +49,6 @@ th,td{padding:8px;border-bottom:1px solid #ddd}
 </thead>
 <tbody id="dashTable"></tbody>
 </table>
-
 </div>
 
 <!-- SCHOOL ENTRY -->
@@ -69,110 +68,146 @@ th,td{padding:8px;border-bottom:1px solid #ddd}
 </div>
 
 <script>
-const BASE_URL="YOUR_SCRIPT_URL";
+
+const BASE_URL="https://script.google.com/macros/s/AKfycbwhl6Xo0UpdZssFVTwDMlFJ2BzE9E9vMHa44Tsd8eDua7FOoH1jG20pJGqMRldwf-Ux/exec";
+
 let role=null,currentSchool=null;
 
 /* LOGIN */
 async function login(){
-const res=await fetch(BASE_URL,{
-method:"POST",
-body:JSON.stringify({
-action:"login",
-username:username.value,
-password:password.value
-})
-});
-const d=await res.json();
+  const usernameVal = document.getElementById("username").value.trim();
+  const passwordVal = document.getElementById("password").value.trim();
 
-if(!d.success){alert("Invalid");return;}
+  try{
+    const res = await fetch(BASE_URL,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        action:"login",
+        username:usernameVal,
+        password:passwordVal
+      })
+    });
 
-role=d.role;
+    const d = await res.json();
+    console.log("LOGIN:", d);
 
-loginBox.style.display="none";
-app.style.display="block";
+    if(!d.success){
+      alert("Invalid login");
+      return;
+    }
 
-if(role==="admin"){
-adminPanel.style.display="block";
-loadDashboard();
-}
+    role=d.role;
 
-if(role==="school"){
-udise.value=username.value;
-udise.disabled=true;
-fetchSchool();
-}
+    document.getElementById("loginBox").style.display="none";
+    document.getElementById("app").style.display="block";
+
+    if(role==="admin"){
+      document.getElementById("adminPanel").style.display="block";
+      loadDashboard();
+    }
+
+    if(role==="school"){
+      document.getElementById("udise").value=usernameVal;
+      document.getElementById("udise").disabled=true;
+      fetchSchool();
+    }
+
+  }catch(err){
+    alert("Login failed");
+    console.error(err);
+  }
 }
 
 /* DASHBOARD */
 async function loadDashboard(){
-const res=await fetch(BASE_URL+"?action=dashboard");
-const data=await res.json();
+  const res=await fetch(BASE_URL+"?action=dashboard");
+  const data=await res.json();
 
-let html="";
+  let html="";
 
-data.forEach(s=>{
-html+=`
-<tr>
-<td>${s.udise}</td>
-<td>${s.school}</td>
-<td>${s.block}</td>
-<td class="${s.submitted?'green':'red'}">
-${s.submitted?'Submitted':'Pending'}
-</td>
-<td>
-<button onclick="openSchool('${s.udise}')">Open</button>
-</td>
-</tr>`;
-});
+  data.forEach(s=>{
+    html+=`
+    <tr>
+      <td>${s.udise}</td>
+      <td>${s.school}</td>
+      <td>${s.block}</td>
+      <td class="${s.submitted?'green':'red'}">
+        ${s.submitted?'Submitted':'Pending'}
+      </td>
+      <td>
+        <button onclick="openSchool('${s.udise}')">Open</button>
+      </td>
+    </tr>`;
+  });
 
-dashTable.innerHTML=html;
+  document.getElementById("dashTable").innerHTML=html;
 }
 
 /* OPEN SCHOOL */
 function openSchool(id){
-udise.value=id;
-udise.disabled=false;
-fetchSchool();
+  document.getElementById("udise").value=id;
+  document.getElementById("udise").disabled=false;
+  fetchSchool();
 }
 
 /* FETCH SCHOOL */
 async function fetchSchool(){
-const res=await fetch(BASE_URL+"?action=schools");
-const data=await res.json();
+  const id=document.getElementById("udise").value;
 
-const s=data.find(x=>x.udise==udise.value);
-if(!s){alert("Not found");return;}
+  const res=await fetch(BASE_URL+"?action=schools");
+  const data=await res.json();
 
-currentSchool=s;
-schoolInfo.innerHTML=s.school;
+  const s=data.find(x=>String(x.udise)===String(id));
 
-loadBooks();
+  if(!s){
+    alert("School not found");
+    return;
+  }
+
+  currentSchool=s;
+
+  document.getElementById("school-info").innerHTML = `
+    <b>${s.school}</b><br>
+    ${s.district} | ${s.block}
+  `;
+
+  loadBooks();
 }
 
 /* LOAD BOOKS */
 async function loadBooks(){
-const res=await fetch(BASE_URL+"?action=books");
-const data=await res.json();
+  const res=await fetch(BASE_URL+"?action=books");
+  const data=await res.json();
 
-let html="<table><tr><th>Book</th><th>Short</th><th>Excess</th></tr>";
+  let html="<table><tr><th>Book</th><th>Shortage</th><th>Excess</th></tr>";
 
-data.forEach(b=>{
-html+=`
-<tr>
-<td>${b.book}</td>
-<td><input></td>
-<td><input></td>
-</tr>`;
-});
+  data.forEach(b=>{
+    html+=`
+    <tr>
+      <td>${b.book}</td>
+      <td><input type="number" value="0"></td>
+      <td><input type="number" value="0"></td>
+    </tr>`;
+  });
 
-html+="</table>";
-books.innerHTML=html;
+  html+="</table>";
+
+  document.getElementById("books").innerHTML=html;
 }
 
 /* SUBMIT */
 async function submitData(){
-alert("Submitted (connected to sheet)");
+  if(!currentSchool){
+    alert("Fetch school first");
+    return;
+  }
+
+  alert("Submission connected (backend ready)");
 }
+
 </script>
 
 </body>
