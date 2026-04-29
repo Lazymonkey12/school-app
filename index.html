@@ -14,7 +14,7 @@ body {
 }
 
 .container {
-  max-width: 900px;
+  max-width: 1000px;
   margin: auto;
   padding: 15px;
 }
@@ -31,7 +31,6 @@ input {
   padding: 8px;
   border-radius: 6px;
   border: 1px solid #ccc;
-  width: 100%;
 }
 
 button {
@@ -47,51 +46,64 @@ button:hover {
   background: #1d4ed8;
 }
 
-.logout-btn {
-  background: #dc2626;
-  float: right;
+.book-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 15px;
+}
+
+.book-table th {
+  background: #eef2ff;
+  padding: 10px;
+  text-align: left;
+}
+
+.book-table td {
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.book-table input {
+  width: 80px;
+  text-align: center;
+}
+
+.remark-input {
+  width: 150px !important;
+}
+
+/* 🎨 COLORS */
+.highlight-shortage {
+  background: #fee2e2;
+}
+
+.highlight-excess {
+  background: #dcfce7;
 }
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
-<div id="loginBox" class="card" style="max-width:400px;margin:50px auto;">
-  <h3>🔐 Login</h3>
-
-  <input id="username" placeholder="Enter UDISE"><br><br>
-  <input id="password" type="password" placeholder="Password"><br><br>
-
-  <button onclick="login()">Login</button>
-  <div id="loginStatus"></div>
-</div>
-
-<!-- APP -->
-<div id="app" class="container" style="display:none;">
-
-  <button class="logout-btn" onclick="logout()">Logout</button>
+<div class="container">
 
   <div class="card">
-    <b>Logged in as:</b> <span id="loggedUser"></span>
-  </div>
+    <h2>📚 FTB Shortage Collection</h2>
 
-  <div class="card">
-    <h3>FTB Data Entry</h3>
-
-    <input id="udise" readonly>
+    <input id="udise" placeholder="Enter 11-digit UDISE">
     <button onclick="fetchSchool()">Fetch</button>
 
     <div id="school-info"></div>
   </div>
 
   <div class="card">
-    <h3>Books</h3>
+    <h3>📖 Book Entry (Shortage / Excess)</h3>
     <div id="books"></div>
   </div>
 
   <div class="card">
-    <button onclick="submitData()">Submit</button>
+    <button id="submitBtn" onclick="submitData()">Submit Data</button>
+    <div id="status"></div>
   </div>
 
 </div>
@@ -101,67 +113,14 @@ const BASE_URL = "https://script.google.com/macros/s/AKfycbwhl6Xo0UpdZssFVTwDMlF
 
 let currentSchool = null;
 
-// LOGIN
-async function login() {
-  const user = document.getElementById('username').value.trim();
-  const pass = document.getElementById('password').value.trim();
-
-  if (!user || !pass) {
-    alert("Enter UDISE and password");
-    return;
-  }
-
-  try {
-    const res = await fetch(BASE_URL + "?action=login");
-    const data = await res.json();
-
-    const valid = data.find(u =>
-      String(u.username).trim() === user &&
-      String(u.password).trim() === pass
-    );
-
-    if (!valid) {
-      document.getElementById('loginStatus').innerText = "❌ Invalid login";
-      return;
-    }
-
-    localStorage.setItem('user', user);
-
-    document.getElementById('loginBox').style.display = "none";
-    document.getElementById('app').style.display = "block";
-
-    document.getElementById('loggedUser').innerText = user;
-    document.getElementById('udise').value = user;
-
-  } catch (err) {
-    console.error(err);
-    alert("Network error");
-  }
-}
-
-// AUTO LOGIN
-window.onload = function() {
-  const user = localStorage.getItem('user');
-  if (user) {
-    document.getElementById('loginBox').style.display = "none";
-    document.getElementById('app').style.display = "block";
-
-    document.getElementById('loggedUser').innerText = user;
-    document.getElementById('udise').value = user;
-  }
-};
-
-// LOGOUT
-function logout() {
-  localStorage.removeItem('user');
-
-  document.getElementById('app').style.display = "none";
-  document.getElementById('loginBox').style.display = "block";
-}
-
 // FETCH SCHOOL
 async function fetchSchool() {
-  const udise = document.getElementById('udise').value;
+  const udise = document.getElementById('udise').value.trim();
+
+  if (udise.length !== 11) {
+    alert("Enter valid UDISE");
+    return;
+  }
 
   const res = await fetch(BASE_URL + "?action=schools");
   const data = await res.json();
@@ -176,7 +135,9 @@ async function fetchSchool() {
   currentSchool = school;
 
   document.getElementById('school-info').innerHTML =
-    "<b>" + school.school + "</b><br>" + school.block;
+    `<b>${school.school}</b><br>
+     ${school.district} | ${school.block}<br>
+     Medium: ${school.medium}`;
 
   loadBooks();
 }
@@ -186,19 +147,103 @@ async function loadBooks() {
   const res = await fetch(BASE_URL + "?action=books");
   const data = await res.json();
 
+  const books = data.filter(b => b.medium === currentSchool.medium);
+
+  const grouped = {};
+
+  books.forEach(b => {
+    if (!grouped[b.class]) grouped[b.class] = [];
+    grouped[b.class].push(b);
+  });
+
   let html = "";
 
-  data.forEach(b => {
+  for (let cls in grouped) {
+    html += `<h4>${cls}</h4>`;
+
     html += `
-      <div>
-        ${b.book}
-        <input type="number" class="shortage" data-book="${b.book}">
-      </div>
+      <table class="book-table">
+        <thead>
+          <tr>
+            <th>Book Name</th>
+            <th>Shortage</th>
+            <th>Excess</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody>
     `;
-  });
+
+    grouped[cls].forEach(b => {
+      html += `
+        <tr class="book-row">
+          <td>${b.book}</td>
+
+          <td>
+            <input type="number" class="shortage-input"
+              data-book="${b.book}"
+              data-class="${b.class}" value="0"
+              oninput="highlightRow(this)">
+          </td>
+
+          <td>
+            <input type="number" class="excess-input"
+              value="0"
+              oninput="highlightRow(this)">
+          </td>
+
+          <td>
+            <input type="text" class="remark-input"
+              placeholder="Remark">
+          </td>
+        </tr>
+      `;
+    });
+
+    html += `</tbody></table>`;
+  }
 
   document.getElementById('books').innerHTML = html;
 }
+
+// 🎯 SMART COLOR + REMARK
+function highlightRow(input) {
+  const row = input.closest("tr");
+
+  const shortageInput = row.querySelector('.shortage-input');
+  const excessInput = row.querySelector('.excess-input');
+  const remarkInput = row.querySelector('.remark-input');
+
+  const shortage = parseInt(shortageInput.value) || 0;
+  const excess = parseInt(excessInput.value) || 0;
+
+  row.classList.remove("highlight-shortage", "highlight-excess");
+
+  const manual = remarkInput.dataset.manual === "true";
+
+  if (shortage > 0) {
+    row.classList.add("highlight-shortage");
+    excessInput.value = 0;
+
+    if (!manual) remarkInput.value = "Shortage reported";
+
+  } else if (excess > 0) {
+    row.classList.add("highlight-excess");
+    shortageInput.value = 0;
+
+    if (!manual) remarkInput.value = "Excess available";
+
+  } else {
+    if (!manual) remarkInput.value = "";
+  }
+}
+
+// Detect manual remark typing
+document.addEventListener("input", function(e) {
+  if (e.target.classList.contains("remark-input")) {
+    e.target.dataset.manual = "true";
+  }
+});
 
 // SUBMIT
 async function submitData() {
@@ -207,32 +252,69 @@ async function submitData() {
     return;
   }
 
+  const submitted = JSON.parse(localStorage.getItem('submitted_udise') || '[]');
+
+  if (submitted.includes(currentSchool.udise)) {
+    alert("Already submitted");
+    return;
+  }
+
   const rows = [];
 
-  document.querySelectorAll('.shortage').forEach(i => {
-    const val = parseInt(i.value) || 0;
+  document.querySelectorAll('.book-row').forEach(row => {
+    const sInput = row.querySelector('.shortage-input');
 
-    if (val === 0) return;
+    const shortage = parseInt(sInput.value) || 0;
+    const excess = parseInt(row.querySelector('.excess-input').value) || 0;
+    const remark = row.querySelector('.remark-input').value || "";
+
+    if (shortage === 0 && excess === 0 && remark.trim() === "") return;
 
     rows.push({
+      timestamp: new Date().toISOString(),
       udise: currentSchool.udise,
       school: currentSchool.school,
-      book: i.dataset.book,
-      shortage: val
+      district: currentSchool.district,
+      block: currentSchool.block,
+      cluster: currentSchool.cluster,
+      medium: currentSchool.medium,
+      class: sInput.dataset.class,
+      book: sInput.dataset.book,
+      shortage,
+      excess,
+      remark
     });
   });
 
   if (rows.length === 0) {
-    alert("No data");
+    alert("No data entered");
     return;
   }
 
-  await fetch(BASE_URL + "?action=submit", {
-    method: "POST",
-    body: JSON.stringify({ rows })
-  });
+  try {
+    const res = await fetch(BASE_URL + "?action=submit", {
+      method: "POST",
+      body: JSON.stringify({ rows })
+    });
 
-  alert("Submitted");
+    const result = await res.json();
+
+    if (result.error) throw new Error(result.error);
+
+    submitted.push(currentSchool.udise);
+    localStorage.setItem('submitted_udise', JSON.stringify(submitted));
+
+    document.querySelectorAll('input').forEach(i => i.disabled = true);
+    document.getElementById('submitBtn').disabled = true;
+
+    alert("Submitted successfully");
+
+    document.getElementById('status').innerText =
+      "Submitted. Editing locked.";
+
+  } catch (err) {
+    alert("Submission failed");
+  }
 }
 </script>
 
