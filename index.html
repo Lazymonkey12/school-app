@@ -20,6 +20,47 @@
   --primary-hover:#2563eb; --table-head:#111827;
   --border:#1f2937; --shortage:#3f1d1d; --excess:#052e1f;
 }
+
+/* 🔐 LOGIN DESIGN */
+.login-wrapper{
+  height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(135deg,#2563eb,#3b82f6);
+}
+.login-card{
+  background:#fff;
+  padding:25px;
+  border-radius:14px;
+  width:320px;
+  box-shadow:0 15px 35px rgba(0,0,0,0.2);
+  text-align:center;
+}
+.input-group{
+  display:flex;
+  align-items:center;
+  background:#f1f5f9;
+  border-radius:8px;
+  padding:8px;
+  margin-bottom:10px;
+}
+.input-group input{
+  border:none;
+  outline:none;
+  background:transparent;
+  width:100%;
+}
+.login-card button{
+  width:100%;
+  padding:10px;
+  background:#2563eb;
+  color:#fff;
+  border:none;
+  border-radius:8px;
+}
+
+/* MAIN */
 body{font-family:'Segoe UI';background:var(--bg);color:var(--text);margin:0}
 .container{max-width:1100px;margin:auto;padding:15px}
 .card{background:var(--card);padding:15px;border-radius:12px;margin-bottom:15px}
@@ -36,18 +77,31 @@ h3{margin-top:20px;color:var(--muted)}
 
 <body>
 
-<div class="container">
+<!-- 🔐 LOGIN -->
+<div id="loginBox" class="login-wrapper">
+  <div class="login-card">
+    <h2>📚 FTB Portal</h2>
 
-<!-- LOGIN -->
-<div id="loginBox" class="card">
-  <h3>Login</h3>
-  <input id="username" placeholder="UDISE / admin">
-  <input id="password" type="password" placeholder="Password">
-  <button onclick="login()">Login</button>
+    <div class="input-group">
+      <input id="username" placeholder="👤 UDISE / admin">
+    </div>
+
+    <div class="input-group">
+      <input id="password" type="password" placeholder="🔒 Password">
+    </div>
+
+    <button onclick="login()">Login</button>
+
+    <div style="margin-top:12px;font-size:11px;color:#6b7280">
+      © Sanjeev Kumar Gogoi<br>
+      Block MIS Kakapathar
+    </div>
+  </div>
 </div>
 
 <!-- APP -->
 <div id="app" style="display:none;">
+<div class="container">
 
 <div class="card">
   <button onclick="toggleTheme()">🌙 Dark Mode</button>
@@ -111,7 +165,7 @@ async function login(){
 function toggleTheme(){document.documentElement.classList.toggle('dark');}
 function printReport(){window.print();}
 
-/* FETCH SCHOOL (FIXED) */
+/* FETCH SCHOOL */
 async function fetchSchool(){
   const res=await fetch(BASE_URL+"?action=schools");
   const data=await res.json();
@@ -147,7 +201,6 @@ async function loadBooks(){
 
   Object.keys(grouped).forEach(cls=>{
     html+=`<h3>Class ${cls}</h3>`;
-
     html+=`<table class="book-table">
     <tr><th>Book</th><th>Shortage</th><th>Excess</th><th>Remarks</th></tr>`;
 
@@ -195,7 +248,6 @@ function updateTotals(){
 
 /* SUBMIT */
 async function submitData(){
-
   const rows=[];
 
   document.querySelectorAll(".book-row").forEach(r=>{
