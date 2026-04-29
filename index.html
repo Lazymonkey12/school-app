@@ -8,7 +8,6 @@
 <meta name="author" content="Sanjeev Kumar Gogoi">
 
 <style>
-/* ✅ SAME CSS — UNCHANGED */
 :root{
   --bg:#f5f7fb; --card:#ffffff; --text:#111827;
   --muted:#6b7280; --primary:#2563eb;
@@ -80,6 +79,11 @@ input{padding:8px;border-radius:8px;border:1px solid var(--border)}
   <div id="status"></div>
 </div>
 
+<!-- FOOTER -->
+<div style="text-align:center;font-size:12px;color:#6b7280;margin-top:10px">
+  © 2026 Sanjeev Kumar Gogoi | Block MIS Kakapathar
+</div>
+
 </div>
 </div>
 
@@ -89,7 +93,7 @@ const BASE_URL="https://script.google.com/macros/s/AKfycbwhl6Xo0UpdZssFVTwDMlFJ2
 let currentSchool=null;
 let userRole=null;
 
-/* 🔐 LOGIN (CORS SAFE) */
+/* LOGIN */
 async function login(){
   const usernameVal=document.getElementById("username").value.trim();
   const passwordVal=document.getElementById("password").value.trim();
@@ -119,17 +123,17 @@ async function login(){
   }
 }
 
-/* ===== THEME ===== */
+/* THEME */
 function toggleTheme(){
   document.documentElement.classList.toggle('dark');
 }
 
-/* ===== PRINT ===== */
+/* PRINT */
 function printReport(){
   window.print();
 }
 
-/* ===== FETCH SCHOOL ===== */
+/* FETCH SCHOOL */
 async function fetchSchool(){
   const udise=document.getElementById('udise').value.trim();
 
@@ -140,18 +144,17 @@ async function fetchSchool(){
   if(!school){alert("Not found");return;}
 
   currentSchool=school;
-
   document.getElementById('school-info').innerHTML=school.school;
 
   loadBooks();
 }
 
-/* ===== LOAD BOOKS ===== */
+/* LOAD BOOKS (UPDATED WITH REMARKS) */
 async function loadBooks(){
   const res=await fetch(BASE_URL+"?action=books");
   const data=await res.json();
 
-  let html="<table class='book-table'><tr><th>Book</th><th>Shortage</th><th>Excess</th></tr>";
+  let html="<table class='book-table'><tr><th>Book</th><th>Shortage</th><th>Excess</th><th>Remarks</th></tr>";
 
   data.forEach(b=>{
     html+=`
@@ -159,6 +162,7 @@ async function loadBooks(){
       <td>${b.book}</td>
       <td><input class="shortage-input" type="number" value="0" oninput="onRowChange(this)"></td>
       <td><input class="excess-input" type="number" value="0" oninput="onRowChange(this)"></td>
+      <td><input class="remark-input" type="text" placeholder="Enter remark"></td>
     </tr>`;
   });
 
@@ -167,7 +171,7 @@ async function loadBooks(){
   document.getElementById("books").innerHTML=html;
 }
 
-/* ===== COLOR LOGIC ===== */
+/* COLOR */
 function onRowChange(input){
   const row=input.closest("tr");
   const s=row.querySelector(".shortage-input");
@@ -177,11 +181,69 @@ function onRowChange(input){
 
   if(s.value>0){e.value=0;row.classList.add("highlight-shortage");}
   if(e.value>0){s.value=0;row.classList.add("highlight-excess");}
+
+  updateTotals();
 }
 
-/* ===== SUBMIT ===== */
+/* TOTAL */
+function updateTotals(){
+  let totalS=0,totalE=0;
+
+  document.querySelectorAll('.book-row').forEach(row=>{
+    totalS+=parseInt(row.querySelector('.shortage-input').value)||0;
+    totalE+=parseInt(row.querySelector('.excess-input').value)||0;
+  });
+
+  document.getElementById('totalShortage').innerText=totalS;
+  document.getElementById('totalExcess').innerText=totalE;
+}
+
+/* SUBMIT + LOCK */
 async function submitData(){
-  alert("Submission ready");
+
+  if(!currentSchool){
+    alert("Fetch school first");
+    return;
+  }
+
+  const submitted=JSON.parse(localStorage.getItem('submitted_udise')||'[]');
+
+  if(submitted.includes(currentSchool.udise)){
+    alert("Already submitted");
+    return;
+  }
+
+  const rows=[];
+
+  document.querySelectorAll('.book-row').forEach(row=>{
+    const shortage=parseInt(row.querySelector('.shortage-input').value)||0;
+    const excess=parseInt(row.querySelector('.excess-input').value)||0;
+    const remark=row.querySelector('.remark-input').value||"";
+
+    if(shortage===0 && excess===0 && remark==="") return;
+
+    rows.push({
+      udise:currentSchool.udise,
+      school:currentSchool.school,
+      shortage,excess,remark
+    });
+  });
+
+  if(rows.length===0){
+    alert("No data entered");
+    return;
+  }
+
+  // simulate submit
+  submitted.push(currentSchool.udise);
+  localStorage.setItem('submitted_udise',JSON.stringify(submitted));
+
+  // 🔒 LOCK ALL INPUTS
+  document.querySelectorAll("input").forEach(i=>i.disabled=true);
+  document.getElementById("submitBtn").disabled=true;
+
+  document.getElementById("status").innerText="Submitted. Locked.";
+  alert("Submitted successfully");
 }
 </script>
 
