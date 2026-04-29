@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html>
 <head>
@@ -5,7 +6,6 @@
 <title>FTB Shortage Collection</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- ✅ AUTHOR TAG -->
 <meta name="author" content="Sanjeev Kumar Gogoi">
 
 <style>
@@ -29,7 +29,6 @@ body {
   margin-bottom: 15px;
 }
 
-/* 🔹 HEADER BRAND */
 .brand {
   text-align: center;
   font-size: 13px;
@@ -37,9 +36,7 @@ body {
   margin-bottom: 10px;
 }
 
-.brand b {
-  color: #2563eb;
-}
+.brand b { color: #2563eb; }
 
 input {
   padding: 8px;
@@ -56,21 +53,16 @@ button {
   cursor: pointer;
 }
 
-button:hover {
-  background: #1d4ed8;
-}
+button:hover { background: #1d4ed8; }
 
-/* TABLE */
 .book-table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 15px;
 }
 
 .book-table th {
   background: #eef2ff;
   padding: 10px;
-  text-align: left;
 }
 
 .book-table td {
@@ -78,43 +70,59 @@ button:hover {
   border-bottom: 1px solid #eee;
 }
 
-.book-table tr:hover {
-  background: #f9fafb;
-}
-
 .book-table input {
   width: 80px;
   text-align: center;
 }
 
-.remark-input {
-  width: 140px !important;
-}
+.remark-input { width: 140px !important; }
 
-/* INTERACTIVE */
 .highlight-shortage { background: #fee2e2; }
 .highlight-excess { background: #dcfce7; }
 
-.status {
-  font-weight: bold;
-  margin-top: 10px;
-}
-
-/* 🔹 FOOTER */
 .footer {
   text-align: center;
   font-size: 12px;
   color: #666;
   margin-top: 20px;
 }
+
+/* 🔐 Floating badge */
+.floating-badge {
+  position: fixed;
+  bottom: 15px;
+  right: 15px;
+  background: #111827;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  z-index: 999;
+}
+
+.floating-badge a {
+  color: white;
+  text-decoration: none;
+}
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<!-- 🔐 LOGIN -->
+<div id="loginBox" class="card" style="max-width:400px;margin:50px auto;">
+  <h3>🔐 School Login</h3>
 
-  <!-- ✅ BRAND TAG -->
+  <input id="username" placeholder="Enter UDISE"><br><br>
+  <input id="password" type="password" placeholder="Password"><br><br>
+
+  <button onclick="login()">Login</button>
+  <div id="loginStatus"></div>
+</div>
+
+<!-- MAIN APP -->
+<div class="container" id="app" style="display:none;">
+
   <div class="brand">
     Developed by <b>Sanjeev Kumar Gogoi</b>
   </div>
@@ -129,20 +137,23 @@ button:hover {
   </div>
 
   <div class="card">
-    <h3>📖 Book Entry (Shortage / Excess)</h3>
+    <h3>📖 Book Entry</h3>
     <div id="books"></div>
   </div>
 
   <div class="card">
     <button id="submitBtn" onclick="submitData()">Submit Data</button>
-    <div id="status" class="status"></div>
   </div>
 
-  <!-- ✅ FOOTER TAG -->
   <div class="footer">
-    © 2026 Sanjeev Kumar Gogoi | FTB Monitoring System
+    © 2026 Sanjeev Kumar Gogoi
   </div>
 
+</div>
+
+<!-- 🔐 FLOATING BADGE -->
+<div class="floating-badge">
+  🚀 <a href="https://github.com/lazymonkey12" target="_blank">Sanjeev</a>
 </div>
 
 <script>
@@ -150,12 +161,42 @@ const BASE_URL = "https://script.google.com/macros/s/AKfycbwhl6Xo0UpdZssFVTwDMlF
 
 let currentSchool = null;
 
+// 🔐 LOGIN
+async function login() {
+  const user = username.value.trim();
+  const pass = password.value.trim();
+
+  const res = await fetch(BASE_URL + "?action=login");
+  const data = await res.json();
+
+  const valid = data.find(u => u.username === user && u.password === pass);
+
+  if (!valid) {
+    loginStatus.innerText = "❌ Invalid login";
+    return;
+  }
+
+  localStorage.setItem('user', user);
+
+  loginBox.style.display = "none";
+  app.style.display = "block";
+}
+
+// AUTO LOGIN
+window.onload = () => {
+  if (localStorage.getItem('user')) {
+    loginBox.style.display = "none";
+    app.style.display = "block";
+  }
+};
+
 // FETCH SCHOOL
 async function fetchSchool() {
   const udise = document.getElementById('udise').value.trim();
+  const loggedUser = localStorage.getItem('user');
 
-  if (udise.length !== 11) {
-    alert("Enter valid UDISE");
+  if (loggedUser !== udise) {
+    alert("❌ You can only access your own school");
     return;
   }
 
@@ -164,17 +205,12 @@ async function fetchSchool() {
 
   const school = data.find(s => String(s.udise) === udise);
 
-  if (!school) {
-    alert("School not found");
-    return;
-  }
+  if (!school) return alert("School not found");
 
   currentSchool = school;
 
   document.getElementById('school-info').innerHTML =
-    `<b>${school.school}</b><br>
-     ${school.district} | ${school.block}<br>
-     Medium: ${school.medium}`;
+    `<b>${school.school}</b><br>${school.block}`;
 
   loadBooks();
 }
@@ -186,153 +222,53 @@ async function loadBooks() {
 
   const books = data.filter(b => b.medium === currentSchool.medium);
 
-  const grouped = {};
-
-  books.forEach(b => {
-    if (!grouped[b.class]) grouped[b.class] = [];
-    grouped[b.class].push(b);
-  });
-
   let html = "";
 
-  for (let cls in grouped) {
-    html += `<h4>${cls}</h4>`;
-
+  books.forEach(b => {
     html += `
-      <table class="book-table">
-        <thead>
-          <tr>
-            <th style="width:40%">Book Name</th>
-            <th>Shortage</th>
-            <th>Excess</th>
-            <th>Remarks</th>
-          </tr>
-        </thead>
-        <tbody>
+      <div>
+        ${b.book}
+        <input type="number" class="shortage-input" data-book="${b.book}" data-class="${b.class}">
+        <input type="number" class="excess-input">
+        <input type="text" class="remark-input">
+      </div>
     `;
+  });
 
-    grouped[cls].forEach(b => {
-      html += `
-        <tr class="book-row">
-          <td>${b.book}</td>
-
-          <td>
-            <input type="number" min="0"
-              class="shortage-input"
-              data-book="${b.book}"
-              data-class="${b.class}" value="0"
-              oninput="highlightRow(this)">
-          </td>
-
-          <td>
-            <input type="number" min="0"
-              class="excess-input"
-              data-book="${b.book}"
-              data-class="${b.class}" value="0"
-              oninput="highlightRow(this)">
-          </td>
-
-          <td>
-            <input type="text"
-              class="remark-input"
-              placeholder="Remark"
-              data-book="${b.book}"
-              data-class="${b.class}">
-          </td>
-        </tr>
-      `;
-    });
-
-    html += `</tbody></table>`;
-  }
-
-  document.getElementById('books').innerHTML = html;
-}
-
-// HIGHLIGHT
-function highlightRow(input) {
-  const row = input.closest("tr");
-  const shortage = parseInt(row.querySelector('.shortage-input').value) || 0;
-  const excess = parseInt(row.querySelector('.excess-input').value) || 0;
-
-  row.classList.remove("highlight-shortage", "highlight-excess");
-
-  if (shortage > 0) row.classList.add("highlight-shortage");
-  if (excess > 0) row.classList.add("highlight-excess");
+  booksDiv.innerHTML = html;
 }
 
 // SUBMIT
 async function submitData() {
-  if (!currentSchool) {
-    alert("Fetch school first");
-    return;
-  }
-
-  const submitted = JSON.parse(localStorage.getItem('submitted_udise') || '[]');
-
-  if (submitted.includes(currentSchool.udise)) {
-    alert("Already submitted");
-    return;
-  }
-
   const rows = [];
 
-  document.querySelectorAll('.book-row').forEach(row => {
-    const sInput = row.querySelector('.shortage-input');
+  document.querySelectorAll('.shortage-input').forEach(i => {
+    const row = i.parentElement;
 
-    const shortage = parseInt(row.querySelector('.shortage-input').value) || 0;
+    const shortage = parseInt(i.value) || 0;
     const excess = parseInt(row.querySelector('.excess-input').value) || 0;
     const remark = row.querySelector('.remark-input').value || "";
 
-    if (shortage === 0 && excess === 0 && remark.trim() === "") return;
+    if (shortage === 0 && excess === 0 && remark === "") return;
 
     rows.push({
-      timestamp: new Date().toISOString(),
       udise: currentSchool.udise,
       school: currentSchool.school,
-      district: currentSchool.district,
-      block: currentSchool.block,
-      cluster: currentSchool.cluster,
-      medium: currentSchool.medium,
-      class: sInput.dataset.class,
-      book: sInput.dataset.book,
-      shortage,
-      excess,
-      remark
+      book: i.dataset.book,
+      class: i.dataset.class,
+      shortage, excess, remark
     });
   });
 
-  if (rows.length === 0) {
-    alert("No data entered");
-    return;
-  }
+  await fetch(BASE_URL + "?action=submit", {
+    method: "POST",
+    body: JSON.stringify({ rows })
+  });
 
-  try {
-    const res = await fetch(BASE_URL + "?action=submit", {
-      method: "POST",
-      body: JSON.stringify({ rows })
-    });
-
-    const result = await res.json();
-
-    if (result.error) throw new Error(result.error);
-
-    submitted.push(currentSchool.udise);
-    localStorage.setItem('submitted_udise', JSON.stringify(submitted));
-
-    document.querySelectorAll('input').forEach(i => i.disabled = true);
-    document.getElementById('submitBtn').disabled = true;
-
-    alert("Submitted successfully");
-
-    document.getElementById('status').innerText =
-      "Submitted. Editing locked.";
-
-  } catch (err) {
-    alert("Submission failed");
-  }
+  alert("Submitted");
 }
 </script>
 
 </body>
 </html>
+```
