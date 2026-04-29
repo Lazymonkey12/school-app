@@ -5,117 +5,44 @@
 <meta charset="UTF-8">
 <title>FTB Shortage Collection</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <meta name="author" content="Sanjeev Kumar Gogoi">
 
 <style>
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background: #f5f7fb;
-  margin: 0;
-}
-
-.container {
-  max-width: 1000px;
-  margin: auto;
-  padding: 15px;
-}
-
+body { font-family: 'Segoe UI', sans-serif; background:#f5f7fb; margin:0; }
+.container { max-width:1000px; margin:auto; padding:15px; }
 .card {
-  background: white;
-  padding: 15px;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-  margin-bottom: 15px;
+  background:white; padding:15px; border-radius:10px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.08); margin-bottom:15px;
 }
-
-.brand {
-  text-align: center;
-  font-size: 13px;
-  color: #555;
-  margin-bottom: 10px;
-}
-
-.brand b { color: #2563eb; }
-
-input {
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
-
+.brand { text-align:center; font-size:13px; color:#555; }
+.brand b { color:#2563eb; }
+input { padding:8px; border-radius:6px; border:1px solid #ccc; }
 button {
-  background: #2563eb;
-  color: white;
-  border: none;
-  padding: 10px;
-  border-radius: 6px;
-  cursor: pointer;
+  background:#2563eb; color:white; border:none;
+  padding:10px; border-radius:6px; cursor:pointer;
 }
-
-button:hover { background: #1d4ed8; }
-
-.book-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.book-table th {
-  background: #eef2ff;
-  padding: 10px;
-}
-
-.book-table td {
-  padding: 8px;
-  border-bottom: 1px solid #eee;
-}
-
-.book-table input {
-  width: 80px;
-  text-align: center;
-}
-
-.remark-input { width: 140px !important; }
-
-.highlight-shortage { background: #fee2e2; }
-.highlight-excess { background: #dcfce7; }
-
-.footer {
-  text-align: center;
-  font-size: 12px;
-  color: #666;
-  margin-top: 20px;
-}
-
-/* 🔐 Floating badge */
+button:hover { background:#1d4ed8; }
+.logout-btn { float:right; background:#dc2626; margin-bottom:10px; }
+.footer { text-align:center; font-size:12px; color:#666; margin-top:20px; }
 .floating-badge {
-  position: fixed;
-  bottom: 15px;
-  right: 15px;
-  background: #111827;
-  color: white;
-  padding: 8px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  z-index: 999;
+  position:fixed; bottom:15px; right:15px;
+  background:#111827; color:white; padding:8px 12px;
+  border-radius:20px; font-size:12px;
 }
-
-.floating-badge a {
-  color: white;
-  text-decoration: none;
-}
+.floating-badge a { color:white; text-decoration:none; }
+.status-ok { color:#16a34a; font-weight:600; }
+.status-warn { color:#dc2626; font-weight:600; }
+.topbar { display:flex; justify-content:space-between; align-items:center; }
 </style>
 </head>
 
 <body>
 
 <!-- 🔐 LOGIN -->
-<div id="loginBox" class="card" style="max-width:400px;margin:50px auto;">
-  <h3>🔐 School Login</h3>
-
+<div id="loginBox" class="card" style="max-width:420px;margin:50px auto;">
+  <h3>🔐 Login</h3>
   <input id="username" placeholder="Enter UDISE"><br><br>
   <input id="password" type="password" placeholder="Password"><br><br>
-
   <button onclick="login()">Login</button>
   <div id="loginStatus"></div>
 </div>
@@ -123,17 +50,23 @@ button:hover { background: #1d4ed8; }
 <!-- MAIN APP -->
 <div class="container" id="app" style="display:none;">
 
-  <div class="brand">
-    Developed by <b>Sanjeev Kumar Gogoi</b>
+  <div class="topbar">
+    <div class="brand">
+      Logged in as: <b id="loggedUser"></b>
+      <span id="roleTag"></span>
+    </div>
+    <div>
+      <button id="dashboardBtn" style="display:none;background:#16a34a;" onclick="goDashboard()">📊 Dashboard</button>
+      <button class="logout-btn" onclick="logout()">🔄 Switch</button>
+    </div>
   </div>
 
   <div class="card">
     <h2>📚 FTB Shortage Collection</h2>
-
-    <input id="udise" placeholder="Enter 11-digit UDISE">
+    <input id="udise" placeholder="UDISE" readonly>
     <button onclick="fetchSchool()">Fetch</button>
-
     <div id="school-info"></div>
+    <div id="submitStatus"></div>
   </div>
 
   <div class="card">
@@ -145,13 +78,10 @@ button:hover { background: #1d4ed8; }
     <button id="submitBtn" onclick="submitData()">Submit Data</button>
   </div>
 
-  <div class="footer">
-    © 2026 Sanjeev Kumar Gogoi
-  </div>
-
+  <div class="footer">© 2026 Sanjeev Kumar Gogoi</div>
 </div>
 
-<!-- 🔐 FLOATING BADGE -->
+<!-- BADGE -->
 <div class="floating-badge">
   🚀 <a href="https://github.com/lazymonkey12" target="_blank">Sanjeev</a>
 </div>
@@ -160,51 +90,167 @@ button:hover { background: #1d4ed8; }
 const BASE_URL = "https://script.google.com/macros/s/AKfycbwhl6Xo0UpdZssFVTwDMlFJ2BzE9E9vMHa44Tsd8eDua7FOoH1jG20pJGqMRldwf-Ux/exec";
 
 let currentSchool = null;
+let currentRole = "school"; // default
 
 // 🔐 LOGIN
 async function login() {
   const user = username.value.trim();
   const pass = password.value.trim();
 
+  if (!user || !pass) {
+    loginStatus.innerText = "Enter UDISE & password";
+    return;
+  }
+
   const res = await fetch(BASE_URL + "?action=login");
   const data = await res.json();
 
-  const valid = data.find(u => u.username === user && u.password === pass);
+  const valid = data.find(u =>
+    String(u.username).trim() === user &&
+    String(u.password).trim() === pass
+  );
 
   if (!valid) {
     loginStatus.innerText = "❌ Invalid login";
     return;
   }
 
+  // save session
   localStorage.setItem('user', user);
+  localStorage.setItem('role', valid.role || "school");
 
+  // show app
   loginBox.style.display = "none";
   app.style.display = "block";
+
+  // UI
+  currentRole = localStorage.getItem('role');
+  loggedUser.innerText = user;
+  roleTag.innerText = currentRole === "admin" ? " (Admin)" : "";
+  udise.value = user;
+
+  // admin dashboard button
+  if (currentRole === "admin") {
+    dashboardBtn.style.display = "inline-block";
+  } else {
+    dashboardBtn.style.display = "none";
+  }
+
+  // prevent back
+  history.replaceState(null, null, location.href);
+
+  // check if already submitted
+  checkAlreadySubmitted();
 }
 
-// AUTO LOGIN
+// 🔄 AUTO LOGIN
 window.onload = () => {
-  if (localStorage.getItem('user')) {
+  const user = localStorage.getItem('user');
+  if (user) {
     loginBox.style.display = "none";
     app.style.display = "block";
+
+    currentRole = localStorage.getItem('role') || "school";
+    loggedUser.innerText = user;
+    roleTag.innerText = currentRole === "admin" ? " (Admin)" : "";
+    udise.value = user;
+
+    if (currentRole === "admin") {
+      dashboardBtn.style.display = "inline-block";
+    }
+
+    checkAlreadySubmitted();
   }
 };
 
+// 🚫 BACK BUTTON BLOCK
+window.onpopstate = function () {
+  if (localStorage.getItem('user')) {
+    history.pushState(null, null, location.href);
+  }
+};
+
+// 🔓 LOGOUT
+function logout() {
+  if (!confirm("Switch school?")) return;
+
+  localStorage.removeItem('user');
+  localStorage.removeItem('role');
+
+  app.style.display = "none";
+  loginBox.style.display = "block";
+
+  username.value = "";
+  password.value = "";
+  books.innerHTML = "";
+  school-info.innerHTML = "";
+  submitStatus.innerHTML = "";
+}
+
+// 📊 DASHBOARD (ADMIN)
+function goDashboard() {
+  window.open("https://lazymonkey12.github.io/school-app/dashboard.html?v=10", "_blank");
+}
+
+// 🔍 CHECK ALREADY SUBMITTED (server + local)
+async function checkAlreadySubmitted() {
+  const user = localStorage.getItem('user');
+
+  // quick local check
+  const submittedLocal = JSON.parse(localStorage.getItem('submitted_udise') || '[]');
+  if (submittedLocal.includes(user)) {
+    setSubmittedUI(true);
+    return;
+  }
+
+  // server check
+  try {
+    const res = await fetch(BASE_URL + "?action=data");
+    const data = await res.json();
+
+    const exists = data.some(r => String(r.udise) === user);
+
+    if (exists) {
+      // mark locally for faster next time
+      submittedLocal.push(user);
+      localStorage.setItem('submitted_udise', JSON.stringify([...new Set(submittedLocal)]));
+      setSubmittedUI(true);
+    } else {
+      setSubmittedUI(false);
+    }
+  } catch (e) {
+    // if server fails, keep UI enabled
+    setSubmittedUI(false);
+  }
+}
+
+function setSubmittedUI(isSubmitted) {
+  if (isSubmitted) {
+    submitStatus.innerHTML = "⚠️ Already submitted for this school";
+    submitStatus.className = "status-warn";
+    submitBtn.disabled = true;
+  } else {
+    submitStatus.innerHTML = "✔ You can submit data";
+    submitStatus.className = "status-ok";
+    submitBtn.disabled = false;
+  }
+}
+
 // FETCH SCHOOL
 async function fetchSchool() {
-  const udise = document.getElementById('udise').value.trim();
-  const loggedUser = localStorage.getItem('user');
+  const user = localStorage.getItem('user');
+  const ud = udise.value;
 
-  if (loggedUser !== udise) {
-    alert("❌ You can only access your own school");
+  // extra guard
+  if (currentRole !== "admin" && user !== ud) {
+    alert("You can only access your own school");
     return;
   }
 
   const res = await fetch(BASE_URL + "?action=schools");
   const data = await res.json();
 
-  const school = data.find(s => String(s.udise) === udise);
-
+  const school = data.find(s => String(s.udise) === ud);
   if (!school) return alert("School not found");
 
   currentSchool = school;
@@ -220,52 +266,98 @@ async function loadBooks() {
   const res = await fetch(BASE_URL + "?action=books");
   const data = await res.json();
 
-  const books = data.filter(b => b.medium === currentSchool.medium);
+  const list = data.filter(b => b.medium === currentSchool.medium);
 
   let html = "";
-
-  books.forEach(b => {
+  list.forEach(b => {
     html += `
-      <div>
+      <div style="margin-bottom:6px;">
         ${b.book}
-        <input type="number" class="shortage-input" data-book="${b.book}" data-class="${b.class}">
-        <input type="number" class="excess-input">
-        <input type="text" class="remark-input">
+        <input type="number" class="shortage-input" data-book="${b.book}" data-class="${b.class}" placeholder="Short">
+        <input type="number" class="excess-input" placeholder="Excess">
+        <input type="text" class="remark-input" placeholder="Remark">
       </div>
     `;
   });
 
-  booksDiv.innerHTML = html;
+  books.innerHTML = html;
 }
 
-// SUBMIT
+// 🚫 PREVENT DOUBLE SUBMIT (final gate) + SUBMIT
 async function submitData() {
-  const rows = [];
+  const user = localStorage.getItem('user');
 
+  // hard stop if already submitted
+  if (submitBtn.disabled) {
+    alert("Already submitted for this school");
+    return;
+  }
+
+  const rows = [];
   document.querySelectorAll('.shortage-input').forEach(i => {
     const row = i.parentElement;
-
     const shortage = parseInt(i.value) || 0;
     const excess = parseInt(row.querySelector('.excess-input').value) || 0;
     const remark = row.querySelector('.remark-input').value || "";
 
-    if (shortage === 0 && excess === 0 && remark === "") return;
+    if (shortage === 0 && excess === 0 && remark.trim() === "") return;
 
     rows.push({
       udise: currentSchool.udise,
       school: currentSchool.school,
-      book: i.dataset.book,
+      district: currentSchool.district,
+      block: currentSchool.block,
+      cluster: currentSchool.cluster,
+      medium: currentSchool.medium,
       class: i.dataset.class,
-      shortage, excess, remark
+      book: i.dataset.book,
+      shortage, excess, remark,
+      timestamp: new Date().toISOString()
     });
   });
 
-  await fetch(BASE_URL + "?action=submit", {
+  if (rows.length === 0) {
+    alert("No data entered");
+    return;
+  }
+
+  // server-side check again before saving
+  const resCheck = await fetch(BASE_URL + "?action=data");
+  const existing = await resCheck.json();
+  const exists = existing.some(r => String(r.udise) === user);
+
+  if (exists) {
+    setSubmittedUI(true);
+    alert("Already submitted (server)");
+    return;
+  }
+
+  // submit
+  const res = await fetch(BASE_URL + "?action=submit", {
     method: "POST",
     body: JSON.stringify({ rows })
   });
 
-  alert("Submitted");
+  const out = await res.json();
+  if (out.error) {
+    alert("Submission failed");
+    return;
+  }
+
+  // mark submitted locally
+  const submittedLocal = JSON.parse(localStorage.getItem('submitted_udise') || '[]');
+  submittedLocal.push(user);
+  localStorage.setItem('submitted_udise', JSON.stringify([...new Set(submittedLocal)]));
+
+  // UI updates
+  setSubmittedUI(true);
+  alert("✅ Submitted successfully");
+
+  // clear form
+  document.querySelectorAll('.shortage-input, .excess-input, .remark-input')
+    .forEach(inp => inp.value = "");
+  books.innerHTML = "";
+  school-info.innerHTML = "";
 }
 </script>
 
