@@ -6,79 +6,121 @@
 <title>FTB Shortage Collection</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
+<meta name="author" content="Sanjeev Kumar Gogoi">
+
 <style>
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background: #f5f7fb;
-  margin: 0;
+:root{
+  --bg:#f5f7fb;
+  --card:#ffffff;
+  --text:#111827;
+  --muted:#6b7280;
+  --primary:#2563eb;
+  --primary-hover:#1d4ed8;
+  --table-head:#eef2ff;
+  --border:#e5e7eb;
+  --shortage:#fee2e2;
+  --excess:#dcfce7;
 }
 
-.container {
-  max-width: 1000px;
-  margin: auto;
-  padding: 15px;
+.dark{
+  --bg:#0b1220;
+  --card:#0f172a;
+  --text:#e5e7eb;
+  --muted:#94a3b8;
+  --primary:#3b82f6;
+  --primary-hover:#2563eb;
+  --table-head:#111827;
+  --border:#1f2937;
+  --shortage:#3f1d1d;
+  --excess:#052e1f;
 }
 
-.card {
-  background: white;
-  padding: 15px;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-  margin-bottom: 15px;
+*{box-sizing:border-box}
+body{
+  font-family:'Segoe UI',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  margin:0;
 }
 
-input {
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
+.container{max-width:1100px;margin:auto;padding:15px}
+
+.card{
+  background:var(--card);
+  padding:15px;border-radius:12px;
+  box-shadow:0 6px 16px rgba(0,0,0,.08);
+  margin-bottom:15px;
 }
 
-button {
-  background: #2563eb;
-  color: white;
-  border: none;
-  padding: 10px;
-  border-radius: 6px;
-  cursor: pointer;
+.topbar{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap
 }
 
-button:hover {
-  background: #1d4ed8;
+.brand{font-size:13px;color:var(--muted)}
+.brand b{color:var(--primary)}
+
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+
+input{
+  padding:8px;border-radius:8px;border:1px solid var(--border);
+  background:transparent;color:var(--text)
 }
 
-.book-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 15px;
+button{
+  background:var(--primary);color:#fff;border:none;
+  padding:10px 12px;border-radius:8px;cursor:pointer
+}
+button:hover{background:var(--primary-hover)}
+
+.btn-secondary{
+  background:#16a34a
+}
+.btn-secondary:hover{background:#15803d}
+
+.btn-ghost{
+  background:transparent;color:var(--text);border:1px solid var(--border)
 }
 
-.book-table th {
-  background: #eef2ff;
-  padding: 10px;
-  text-align: left;
+.kpis{
+  display:flex;gap:10px;flex-wrap:wrap
+}
+.kpi{
+  flex:1;min-width:180px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px;
+}
+.kpi .label{font-size:12px;color:var(--muted)}
+.kpi .value{font-size:22px;font-weight:700;margin-top:4px}
+
+.book-table{
+  width:100%;border-collapse:collapse;margin-bottom:15px
+}
+.book-table th{
+  background:var(--table-head);
+  padding:10px;text-align:left;border-bottom:1px solid var(--border)
+}
+.book-table td{
+  padding:8px;border-bottom:1px solid var(--border)
+}
+.book-table input{
+  width:90px;text-align:center
+}
+.remark-input{width:180px !important;text-align:left}
+
+.highlight-shortage{background:var(--shortage)}
+.highlight-excess{background:var(--excess)}
+
+.footer{
+  text-align:center;font-size:12px;color:var(--muted);margin-top:10px
 }
 
-.book-table td {
-  padding: 8px;
-  border-bottom: 1px solid #eee;
-}
-
-.book-table input {
-  width: 80px;
-  text-align: center;
-}
-
-.remark-input {
-  width: 150px !important;
-}
-
-/* 🎨 COLORS */
-.highlight-shortage {
-  background: #fee2e2;
-}
-
-.highlight-excess {
-  background: #dcfce7;
+/* Print styles */
+@media print{
+  .no-print{display:none !important}
+  body{background:#fff;color:#000}
+  .card{box-shadow:none;border:1px solid #ddd}
 }
 </style>
 </head>
@@ -87,6 +129,30 @@ button:hover {
 
 <div class="container">
 
+  <!-- TOP BAR -->
+  <div class="topbar no-print">
+    <div class="brand">
+      Developed by <b>Sanjeev Kumar Gogoi</b> | Block MIS, Kakapathar
+    </div>
+    <div class="actions">
+      <button class="btn-ghost" onclick="toggleTheme()">🌙 Dark Mode</button>
+      <button class="btn-secondary" onclick="printReport()">🖨 Print Report</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="kpi">
+      <div class="label">Total Shortage</div>
+      <div class="value" id="totalShortage">0</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Total Excess</div>
+      <div class="value" id="totalExcess">0</div>
+    </div>
+  </div>
+
+  <!-- SCHOOL -->
   <div class="card">
     <h2>📚 FTB Shortage Collection</h2>
 
@@ -96,72 +162,80 @@ button:hover {
     <div id="school-info"></div>
   </div>
 
+  <!-- BOOKS -->
   <div class="card">
     <h3>📖 Book Entry (Shortage / Excess)</h3>
     <div id="books"></div>
   </div>
 
-  <div class="card">
+  <!-- SUBMIT -->
+  <div class="card no-print">
     <button id="submitBtn" onclick="submitData()">Submit Data</button>
     <div id="status"></div>
+  </div>
+
+  <div class="footer">
+    © 2026 Sanjeev Kumar Gogoi | Block MIS Kakapathar
   </div>
 
 </div>
 
 <script>
 const BASE_URL = "https://script.google.com/macros/s/AKfycbwhl6Xo0UpdZssFVTwDMlFJ2BzE9E9vMHa44Tsd8eDua7FOoH1jG20pJGqMRldwf-Ux/exec";
-
 let currentSchool = null;
 
-// FETCH SCHOOL
-async function fetchSchool() {
-  const udise = document.getElementById('udise').value.trim();
+/* ===== THEME ===== */
+(function initTheme(){
+  const t = localStorage.getItem('theme');
+  if(t==='dark') document.documentElement.classList.add('dark');
+})();
+function toggleTheme(){
+  const root = document.documentElement;
+  root.classList.toggle('dark');
+  localStorage.setItem('theme', root.classList.contains('dark')?'dark':'light');
+}
 
-  if (udise.length !== 11) {
-    alert("Enter valid UDISE");
-    return;
-  }
+/* ===== PRINT ===== */
+function printReport(){
+  window.print();
+}
+
+/* ===== FETCH SCHOOL ===== */
+async function fetchSchool(){
+  const udise = document.getElementById('udise').value.trim();
+  if(udise.length !== 11){ alert("Enter valid UDISE"); return; }
 
   const res = await fetch(BASE_URL + "?action=schools");
   const data = await res.json();
 
   const school = data.find(s => String(s.udise) === udise);
-
-  if (!school) {
-    alert("School not found");
-    return;
-  }
+  if(!school){ alert("School not found"); return; }
 
   currentSchool = school;
 
   document.getElementById('school-info').innerHTML =
-    `<b>${school.school}</b><br>
-     ${school.district} | ${school.block}<br>
-     Medium: ${school.medium}`;
+    `<b>${school.school}</b><br>${school.district} | ${school.block}<br>Medium: ${school.medium}`;
 
   loadBooks();
 }
 
-// LOAD BOOKS
-async function loadBooks() {
+/* ===== LOAD BOOKS ===== */
+async function loadBooks(){
   const res = await fetch(BASE_URL + "?action=books");
   const data = await res.json();
 
   const books = data.filter(b => b.medium === currentSchool.medium);
-
   const grouped = {};
 
-  books.forEach(b => {
-    if (!grouped[b.class]) grouped[b.class] = [];
+  books.forEach(b=>{
+    if(!grouped[b.class]) grouped[b.class]=[];
     grouped[b.class].push(b);
   });
 
   let html = "";
 
-  for (let cls in grouped) {
-    html += `<h4>${cls}</h4>`;
-
-    html += `
+  for (let cls in grouped){
+    html += `<h4>${cls}</h4>
       <table class="book-table">
         <thead>
           <tr>
@@ -170,151 +244,116 @@ async function loadBooks() {
             <th>Excess</th>
             <th>Remarks</th>
           </tr>
-        </thead>
-        <tbody>
-    `;
+        </thead><tbody>`;
 
-    grouped[cls].forEach(b => {
+    grouped[cls].forEach(b=>{
       html += `
         <tr class="book-row">
           <td>${b.book}</td>
-
-          <td>
-            <input type="number" class="shortage-input"
-              data-book="${b.book}"
-              data-class="${b.class}" value="0"
-              oninput="highlightRow(this)">
-          </td>
-
-          <td>
-            <input type="number" class="excess-input"
-              value="0"
-              oninput="highlightRow(this)">
-          </td>
-
-          <td>
-            <input type="text" class="remark-input"
-              placeholder="Remark">
-          </td>
-        </tr>
-      `;
+          <td><input type="number" class="shortage-input"
+              data-book="${b.book}" data-class="${b.class}" value="0"
+              oninput="onRowChange(this)"></td>
+          <td><input type="number" class="excess-input"
+              value="0" oninput="onRowChange(this)"></td>
+          <td><input type="text" class="remark-input" placeholder="Enter remark"></td>
+        </tr>`;
     });
 
     html += `</tbody></table>`;
   }
 
   document.getElementById('books').innerHTML = html;
+  updateTotals();
 }
 
-// 🎯 SMART COLOR + REMARK
-function highlightRow(input) {
+/* ===== ROW CHANGE (color + single-field rule) ===== */
+function onRowChange(input){
   const row = input.closest("tr");
+  const sEl = row.querySelector('.shortage-input');
+  const eEl = row.querySelector('.excess-input');
 
-  const shortageInput = row.querySelector('.shortage-input');
-  const excessInput = row.querySelector('.excess-input');
-  const remarkInput = row.querySelector('.remark-input');
+  const s = parseInt(sEl.value)||0;
+  const e = parseInt(eEl.value)||0;
 
-  const shortage = parseInt(shortageInput.value) || 0;
-  const excess = parseInt(excessInput.value) || 0;
+  row.classList.remove('highlight-shortage','highlight-excess');
 
-  row.classList.remove("highlight-shortage", "highlight-excess");
-
-  const manual = remarkInput.dataset.manual === "true";
-
-  if (shortage > 0) {
-    row.classList.add("highlight-shortage");
-    excessInput.value = 0;
-
-    if (!manual) remarkInput.value = "Shortage reported";
-
-  } else if (excess > 0) {
-    row.classList.add("highlight-excess");
-    shortageInput.value = 0;
-
-    if (!manual) remarkInput.value = "Excess available";
-
-  } else {
-    if (!manual) remarkInput.value = "";
+  if(s>0){
+    row.classList.add('highlight-shortage');
+    eEl.value = 0; // prevent both
+  } else if(e>0){
+    row.classList.add('highlight-excess');
+    sEl.value = 0; // prevent both
   }
+
+  updateTotals();
 }
 
-// Detect manual remark typing
-document.addEventListener("input", function(e) {
-  if (e.target.classList.contains("remark-input")) {
-    e.target.dataset.manual = "true";
-  }
-});
+/* ===== LIVE TOTALS ===== */
+function updateTotals(){
+  let totalS = 0, totalE = 0;
 
-// SUBMIT
-async function submitData() {
-  if (!currentSchool) {
-    alert("Fetch school first");
-    return;
-  }
+  document.querySelectorAll('.book-row').forEach(row=>{
+    const s = parseInt(row.querySelector('.shortage-input').value)||0;
+    const e = parseInt(row.querySelector('.excess-input').value)||0;
+    totalS += s;
+    totalE += e;
+  });
 
-  const submitted = JSON.parse(localStorage.getItem('submitted_udise') || '[]');
+  document.getElementById('totalShortage').innerText = totalS;
+  document.getElementById('totalExcess').innerText = totalE;
+}
 
-  if (submitted.includes(currentSchool.udise)) {
+/* ===== SUBMIT ===== */
+async function submitData(){
+  if(!currentSchool){ alert("Fetch school first"); return; }
+
+  const submitted = JSON.parse(localStorage.getItem('submitted_udise')||'[]');
+  if(submitted.includes(currentSchool.udise)){
     alert("Already submitted");
     return;
   }
 
   const rows = [];
+  document.querySelectorAll('.book-row').forEach(row=>{
+    const sEl = row.querySelector('.shortage-input');
 
-  document.querySelectorAll('.book-row').forEach(row => {
-    const sInput = row.querySelector('.shortage-input');
-
-    const shortage = parseInt(sInput.value) || 0;
-    const excess = parseInt(row.querySelector('.excess-input').value) || 0;
+    const shortage = parseInt(sEl.value)||0;
+    const excess = parseInt(row.querySelector('.excess-input').value)||0;
     const remark = row.querySelector('.remark-input').value || "";
 
-    if (shortage === 0 && excess === 0 && remark.trim() === "") return;
+    if(shortage===0 && excess===0 && remark.trim()==="") return;
 
     rows.push({
-      timestamp: new Date().toISOString(),
-      udise: currentSchool.udise,
-      school: currentSchool.school,
-      district: currentSchool.district,
-      block: currentSchool.block,
-      cluster: currentSchool.cluster,
-      medium: currentSchool.medium,
-      class: sInput.dataset.class,
-      book: sInput.dataset.book,
-      shortage,
-      excess,
-      remark
+      timestamp:new Date().toISOString(),
+      udise:currentSchool.udise,
+      school:currentSchool.school,
+      district:currentSchool.district,
+      block:currentSchool.block,
+      cluster:currentSchool.cluster,
+      medium:currentSchool.medium,
+      class:sEl.dataset.class,
+      book:sEl.dataset.book,
+      shortage,excess,remark
     });
   });
 
-  if (rows.length === 0) {
-    alert("No data entered");
-    return;
-  }
+  if(rows.length===0){ alert("No data entered"); return; }
 
-  try {
-    const res = await fetch(BASE_URL + "?action=submit", {
-      method: "POST",
-      body: JSON.stringify({ rows })
-    });
+  const res = await fetch(BASE_URL + "?action=submit", {
+    method:"POST",
+    body:JSON.stringify({rows})
+  });
+  const result = await res.json();
+  if(result.error){ alert("Submission failed"); return; }
 
-    const result = await res.json();
+  submitted.push(currentSchool.udise);
+  localStorage.setItem('submitted_udise', JSON.stringify(submitted));
 
-    if (result.error) throw new Error(result.error);
+  document.querySelectorAll('input').forEach(i=>i.disabled=true);
+  document.getElementById('submitBtn').disabled = true;
 
-    submitted.push(currentSchool.udise);
-    localStorage.setItem('submitted_udise', JSON.stringify(submitted));
-
-    document.querySelectorAll('input').forEach(i => i.disabled = true);
-    document.getElementById('submitBtn').disabled = true;
-
-    alert("Submitted successfully");
-
-    document.getElementById('status').innerText =
-      "Submitted. Editing locked.";
-
-  } catch (err) {
-    alert("Submission failed");
-  }
+  alert("Submitted successfully");
+  document.getElementById('status').innerText = "Submitted. Editing locked.";
 }
 </script>
 
