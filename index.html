@@ -34,7 +34,6 @@ th,td{padding:8px;border-bottom:1px solid #ddd}
 <!-- ADMIN DASHBOARD -->
 <div id="adminPanel" class="card" style="display:none;">
 <h3>📊 District Dashboard</h3>
-
 <button onclick="loadDashboard()">Refresh</button>
 
 <table>
@@ -68,27 +67,24 @@ th,td{padding:8px;border-bottom:1px solid #ddd}
 </div>
 
 <script>
-
 const BASE_URL="https://script.google.com/macros/s/AKfycbwhl6Xo0UpdZssFVTwDMlFJ2BzE9E9vMHa44Tsd8eDua7FOoH1jG20pJGqMRldwf-Ux/exec";
 
 let role=null,currentSchool=null;
 
-/* LOGIN */
+/* 🔐 LOGIN (CORS SAFE) */
 async function login(){
   const usernameVal = document.getElementById("username").value.trim();
   const passwordVal = document.getElementById("password").value.trim();
 
+  const formData = new URLSearchParams();
+  formData.append("action","login");
+  formData.append("username",usernameVal);
+  formData.append("password",passwordVal);
+
   try{
     const res = await fetch(BASE_URL,{
       method:"POST",
-      headers:{
-        "Content-Type":"application/json"
-      },
-      body:JSON.stringify({
-        action:"login",
-        username:usernameVal,
-        password:passwordVal
-      })
+      body: formData
     });
 
     const d = await res.json();
@@ -121,13 +117,12 @@ async function login(){
   }
 }
 
-/* DASHBOARD */
+/* 📊 DASHBOARD */
 async function loadDashboard(){
   const res=await fetch(BASE_URL+"?action=dashboard");
   const data=await res.json();
 
   let html="";
-
   data.forEach(s=>{
     html+=`
     <tr>
@@ -198,16 +193,31 @@ async function loadBooks(){
   document.getElementById("books").innerHTML=html;
 }
 
-/* SUBMIT */
+/* SUBMIT (CORS SAFE) */
 async function submitData(){
   if(!currentSchool){
     alert("Fetch school first");
     return;
   }
 
-  alert("Submission connected (backend ready)");
-}
+  const formData = new URLSearchParams();
+  formData.append("rows", JSON.stringify([
+    { udise: currentSchool.udise }
+  ]));
 
+  const res = await fetch(BASE_URL,{
+    method:"POST",
+    body: formData
+  });
+
+  const data = await res.json();
+
+  if(data.success){
+    alert("Submitted successfully");
+  }else{
+    alert("Error: "+data.error);
+  }
+}
 </script>
 
 </body>
