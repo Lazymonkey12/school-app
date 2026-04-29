@@ -20,13 +20,11 @@
   --primary-hover:#2563eb; --table-head:#111827;
   --border:#1f2937; --shortage:#3f1d1d; --excess:#052e1f;
 }
-*{box-sizing:border-box}
 body{font-family:'Segoe UI';background:var(--bg);color:var(--text);margin:0}
 .container{max-width:1100px;margin:auto;padding:15px}
 .card{background:var(--card);padding:15px;border-radius:12px;margin-bottom:15px}
 button{background:var(--primary);color:#fff;border:none;padding:10px;border-radius:8px}
-input{padding:6px;border-radius:6px;border:1px solid var(--border);width:90px}
-.remark-input{width:160px}
+input{padding:6px;border-radius:6px;border:1px solid var(--border)}
 .book-table{width:100%;border-collapse:collapse;margin-bottom:10px}
 .book-table th{background:var(--table-head)}
 .book-table td{border-bottom:1px solid var(--border);padding:6px}
@@ -92,40 +90,47 @@ let currentSchool=null;
 async function login(){
   const f=new URLSearchParams();
   f.append("action","login");
-  f.append("username",username.value);
-  f.append("password",password.value);
+  f.append("username",document.getElementById("username").value);
+  f.append("password",document.getElementById("password").value);
 
   const res=await fetch(BASE_URL,{method:"POST",body:f});
   const d=await res.json();
 
   if(!d.success){alert("Invalid");return;}
 
-  loginBox.style.display="none";
-  app.style.display="block";
+  document.getElementById("loginBox").style.display="none";
+  document.getElementById("app").style.display="block";
 
-  udise.value=username.value;
-  udise.disabled=true;
+  document.getElementById("udise").value=document.getElementById("username").value;
+  document.getElementById("udise").disabled=true;
+
   fetchSchool();
 }
 
-/* THEME */
+/* THEME + PRINT */
 function toggleTheme(){document.documentElement.classList.toggle('dark');}
 function printReport(){window.print();}
 
-/* FETCH SCHOOL */
+/* FETCH SCHOOL (FIXED) */
 async function fetchSchool(){
   const res=await fetch(BASE_URL+"?action=schools");
   const data=await res.json();
 
-  const s=data.find(x=>String(x.udise)===udise.value);
+  const id=document.getElementById("udise").value;
+
+  const s=data.find(x=>String(x.udise)===String(id));
   if(!s){alert("Not found");return;}
 
   currentSchool=s;
-  schoolInfo.innerHTML=`<b>${s.school}</b><br>${s.block}`;
+
+  document.getElementById("school-info").innerHTML = `
+    <b>${s.school}</b><br>${s.block}
+  `;
+
   loadBooks();
 }
 
-/* LOAD BOOKS (CLASS GROUPED) */
+/* LOAD BOOKS */
 async function loadBooks(){
   const res=await fetch(BASE_URL+"?action=books");
   const data=await res.json();
@@ -144,7 +149,7 @@ async function loadBooks(){
     html+=`<h3>Class ${cls}</h3>`;
 
     html+=`<table class="book-table">
-    <tr><th>Book Name</th><th>Shortage</th><th>Excess</th><th>Remarks</th></tr>`;
+    <tr><th>Book</th><th>Shortage</th><th>Excess</th><th>Remarks</th></tr>`;
 
     grouped[cls].forEach(b=>{
       html+=`
@@ -152,14 +157,14 @@ async function loadBooks(){
         <td>${b.book}</td>
         <td><input class="shortage-input" data-book="${b.book}" data-class="${cls}" value="0" type="number" oninput="onRowChange(this)"></td>
         <td><input class="excess-input" value="0" type="number" oninput="onRowChange(this)"></td>
-        <td><input class="remark-input" type="text" placeholder="Remark"></td>
+        <td><input class="remark-input" type="text"></td>
       </tr>`;
     });
 
     html+="</table>";
   });
 
-  books.innerHTML=html;
+  document.getElementById("books").innerHTML=html;
 }
 
 /* COLOR + TOTAL */
@@ -184,8 +189,8 @@ function updateTotals(){
     te+=parseInt(r.querySelector(".excess-input").value)||0;
   });
 
-  totalShortage.innerText=ts;
-  totalExcess.innerText=te;
+  document.getElementById("totalShortage").innerText=ts;
+  document.getElementById("totalExcess").innerText=te;
 }
 
 /* SUBMIT */
@@ -228,9 +233,9 @@ async function submitData(){
   if(result.error){alert(result.error);return;}
 
   document.querySelectorAll("input").forEach(i=>i.disabled=true);
-  submitBtn.disabled=true;
+  document.getElementById("submitBtn").disabled=true;
 
-  status.innerText="Submitted & Locked";
+  document.getElementById("status").innerText="Submitted & Locked";
   alert("Submitted successfully");
 }
 </script>
